@@ -225,6 +225,9 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
         <button role="tab" id="tab-realized" data-tab="realized" aria-selected="false">Realized</button>
       </div>
     </div>
+    <div class="scroller" id="acctBox" hidden>
+      <div class="seg small" aria-label="Account" id="acctSeg"></div>
+    </div>
     <div class="scroller" id="periodBox">
       <div class="seg small" aria-label="Period" id="periodSeg"></div>
     </div>
@@ -739,7 +742,16 @@ function donut(host, parts, total) {
 /* ---------- state ---------- */
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }, del(k) { try { localStorage.removeItem(k); } catch (e) { } } };
 const KEY = 'rendement.csv.v1';
-const state = { tab: 'return', period: store.get('rendement.period') || 'MAX', mode: 'return', source: 'demo', data: null, model: null };
+const state = { tab: 'return', period: store.get('rendement.period') || 'MAX', mode: 'return', source: 'demo', data: null, model: null, ib: null, view: 'local', combined: null };
+// which account(s) are on screen: 'local' (example, CSV or DEGIRO), 'ibkr', or 'all' (both added together)
+const canCombine = () => !!(state.ib && state.source !== 'demo' && state.ib.baseCcy === 'EUR');
+function normaliseView() {
+  if (state.view === 'all' && !canCombine()) state.view = state.ib ? 'ibkr' : 'local';
+  if (state.view === 'ibkr' && !state.ib) state.view = 'local';
+  if (state.view === 'local' && state.source === 'demo' && state.ib) state.view = 'ibkr';
+}
+const curIB = () => state.view === 'ibkr' ? state.ib : null;
+const curModel = () => state.view === 'all' ? state.combined : state.model;
 function loadData(data, source) { state.data = data; state.source = source; state.model = compute(data); }
 function bootLocal() {
   const dg = store.get(KEY_DG);
@@ -755,7 +767,7 @@ const PERIOD_LABEL = { '7D': 'last 7 days', 'MTD': 'this month', '1M': 'last mon
 function setMoney(id, v, signed) { const el = $(id); el.textContent = signed ? seur(v) : eur(v); el.className = el.className.replace(/\b(pos|neg)\b/g, '').trim() + (signed && cls(v) ? ' ' + cls(v) : ''); }
 
 function renderReturn(P) {
-  const ib = state.source === 'ibkr' ? state.ib : null, M = ib || state.model, e = P.end;
+  const ib = curIB(), M = ib || curModel(), e = P.end;
   const nowV = ib ? ib.nav : e.v, nowCash = ib ? ib.cash : e.cash;
   setMoney('kValue', nowV);
   $('kValueSub').textContent = P.base.d ? `${seur(e.v - P.base.v)} since ${fmtDate(P.startDate)}` : `Tracked since ${fmtDate(P.pts[0].d)}`;
@@ -777,8 +789,9 @@ function renderReturn(P) {
     setMoney('kInc', ib.dividends || 0, true);
     $('kIncRows').innerHTML = `<div><span>Dividends (IBKR)</span><span>${eur(ib.dividends || 0)}</span></div><div><span>Interest and fees</span><span>not in IBKR feed</span></div>`;
   } else {
-    setMoney('kInc', P.div + P.int - P.fee, true);
-    $('kIncRows').innerHTML = `<div><span>Dividends</span><span>${eur(P.div)}</span></div><div><span>Interest</span><span>${eur(P.int)}</span></div><div><span>Fees</span><span>${P.fee ? seur(-P.fee) : eur(0)}</span></div>`;
+    const ibd = M.ibDiv || 0;
+    setMoney('kInc', P.div + P.int - P.fee + ibd, true);
+    $('kIncRows').innerHTML = `<div><span>Dividends${ibd ? ' (DEGIRO)' : ''}</span><span>${eur(P.div)}</span></div>${ibd ? `<div><span>Dividends (IBKR, total)</span><span>${eur(ibd)}</span></div>` : ''}<div><span>Interest</span><span>${eur(P.int)}</span></div><div><span>Fees</span><span>${P.fee ? seur(-P.fee) : eur(0)}</span></div>`;
   }
   setMoney('kCash', nowCash);
   const cp = nowV > 0 ? Math.max(0, nowCash / nowV) : 0;
@@ -811,7 +824,7 @@ function renderReturn(P) {
 }
 
 function renderAllocation() {
-  const ib = state.source === 'ibkr' ? state.ib : null, M = ib || state.model, total = ib ? ib.nav : M.end.v, cash = ib ? ib.cash : M.end.cash, byCat = {};
+  const ib = curIB(), M = ib || curModel(), total = ib ? ib.nav : M.end.v, cash = ib ? ib.cash : M.end.cash, byCat = {};
   let parts;
   if (ib && ib.alloc && ib.alloc.length) {
     let k = 0;
@@ -829,7 +842,7 @@ function renderAllocation() {
   const catIdx = Object.fromEntries(parts.map(p => [p.cat, p.color]));
   if (ib) { let k = parts.length; M.holdings.forEach(h => { if (!catIdx[h.category]) catIdx[h.category] = catColor(h.category, Math.min(4, k++)); }); }
   const tc = M.holdings.reduce((a, h) => a + h.cost, 0), tv = M.holdings.reduce((a, h) => a + h.value, 0);
-  $('holdTable').innerHTML = `<table><thead><tr><th>Asset</th><th>Quantity</th><th>Avg cost</th><th>Price</th><th>Value</th><th>Unrealized</th><th>Weight</th></tr></thead><tbody>${M.holdings.map(h => `<tr><td><span class="tk">${ib ? '' : `<i class="sw" style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;background:${catIdx[h.category]}"></i>`}${esc(ib ? h.ticker : labelOf(h.ticker))}</span><span class="nm">${esc(h.name)} · ${esc(h.category)}${isISIN(h.ticker) ? ' · ' + h.ticker : ''}</span></td><td>${qtyFmt.format(h.qty)}</td><td>${money(h.avg, h.ccy)}</td><td>${money(h.price, h.ccy)}<span class="nm">${h.priceDate ? fmtDate(h.priceDate) : h.ccy && ib && h.ccy !== ib.baseCcy ? h.ccy : ''}</span></td><td>${eur(h.value)}</td><td class="${cls(h.pnl)}">${seur(h.pnl)}<span class="nm">${pct(h.cost ? h.pnl / h.cost : 0)}</span></td><td>${NF2.format(total ? h.value / total * 100 : 0)}%</td></tr>`).join('') || '<tr><td colspan="7">No open positions.</td></tr>'}</tbody><tfoot><tr><td>Total invested</td><td></td><td></td><td></td><td>${eur(tv)}</td><td class="${cls(tv - tc)}">${seur(tv - tc)}</td><td>${NF2.format(total ? tv / total * 100 : 0)}%</td></tr></tfoot></table>`;
+  $('holdTable').innerHTML = `<table><thead><tr><th>Asset</th><th>Quantity</th><th>Avg cost</th><th>Price</th><th>Value</th><th>Unrealized</th><th>Weight</th></tr></thead><tbody>${M.holdings.map(h => `<tr><td><span class="tk">${ib ? '' : `<i class="sw" style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;background:${catIdx[h.category]}"></i>`}${esc(ib ? h.ticker : labelOf(h.ticker))}</span><span class="nm">${esc(h.name)} · ${esc(h.category)}${isISIN(h.ticker) ? ' · ' + h.ticker : ''}${h.acct ? ' · ' + h.acct : ''}</span></td><td>${qtyFmt.format(h.qty)}</td><td>${money(h.avg, h.ccy)}</td><td>${money(h.price, h.ccy)}<span class="nm">${h.priceDate ? fmtDate(h.priceDate) : h.ccy && ib && h.ccy !== ib.baseCcy ? h.ccy : ''}</span></td><td>${eur(h.value)}</td><td class="${cls(h.pnl)}">${seur(h.pnl)}<span class="nm">${pct(h.cost ? h.pnl / h.cost : 0)}</span></td><td>${NF2.format(total ? h.value / total * 100 : 0)}%</td></tr>`).join('') || '<tr><td colspan="7">No open positions.</td></tr>'}</tbody><tfoot><tr><td>Total invested</td><td></td><td></td><td></td><td>${eur(tv)}</td><td class="${cls(tv - tc)}">${seur(tv - tc)}</td><td>${NF2.format(total ? tv / total * 100 : 0)}%</td></tr></tfoot></table>`;
 }
 
 function renderIncome(P) {
@@ -853,7 +866,31 @@ function renderRealized(P) {
   $('rWins').textContent = `${wins} of ${R.length}`; $('rWinsSub').textContent = R.length ? `${Math.round(wins / R.length * 100)}% of sales closed above average cost` : 'No sales in this period';
   setMoney('rProc', proc); $('rProcSub').textContent = 'Cash received, after costs';
   const meta = state.data.meta || {};
-  $('realTable').innerHTML = `<table><thead><tr><th>Date</th><th>Asset</th><th>Quantity</th><th>Sell price</th><th>Avg cost</th><th>Proceeds</th><th>Realized</th></tr></thead><tbody>${R.slice().reverse().map(x => `<tr><td>${fmtDate(x.date)}</td><td><span class="tk">${esc(labelOf(x.ticker))}</span><span class="nm">${esc((meta[x.ticker] || {}).name || '')}</span></td><td>${qtyFmt.format(x.qty)}</td><td>${eur(x.price)}</td><td>${eur(x.avg)}</td><td>${eur(x.proceeds)}</td><td class="${cls(x.pnl)}">${seur(x.pnl)}<span class="nm">${pct(x.basis ? x.pnl / x.basis : 0)}</span></td></tr>`).join('') || '<tr><td colspan="7">No sales in this period.</td></tr>'}</tbody></table>`;
+  $('realTable').innerHTML = `<table><thead><tr><th>Date</th><th>Asset</th><th>Quantity</th><th>Sell price</th><th>Avg cost</th><th>Proceeds</th><th>Realized</th></tr></thead><tbody>${R.slice().reverse().map(x => `<tr><td>${fmtDate(x.date)}</td><td><span class="tk">${esc(labelOf(x.ticker))}</span><span class="nm">${esc((meta[x.ticker] || {}).name || x.name || '')}${x.acct ? ' · ' + x.acct : ''}</span></td><td>${qtyFmt.format(x.qty)}</td><td>${money(x.price, x.ccy)}</td><td>${x.avg == null ? '—' : eur(x.avg)}</td><td>${eur(x.proceeds)}</td><td class="${cls(x.pnl)}">${seur(x.pnl)}<span class="nm">${pct(x.basis ? x.pnl / x.basis : 0)}</span></td></tr>`).join('') || '<tr><td colspan="7">No sales in this period.</td></tr>'}</tbody></table>`;
+}
+
+function buildCombined(M, ib) {
+  const lp = ib.periods[ib.order[ib.order.length - 1]];
+  // IBKR value and cumulative net deposits; capital already there at the series start counts as a deposit
+  const ibPts = lp ? lp.pts.map(p => ({ d: p.d, v: p.v, inv: p.inv + lp.base.v })) : [];
+  if (ibPts.length) ibPts[ibPts.length - 1] = { ...ibPts[ibPts.length - 1], v: ib.nav };
+  const first = ibPts.length && ibPts[0].d < M.rec[0].d ? ibPts[0].d : M.rec[0].d;
+  const lastD = [M.end.d, ibPts.length ? ibPts[ibPts.length - 1].d : '', TODAY].sort().pop();
+  const rec = [];
+  let li = 0, ii = 0, lv = 0, linv = 0, iv = 0, iinv = 0, prevV = 0, idx = 1, prevInv = 0;
+  for (const d of dayRange(first, lastD)) {
+    while (li < M.rec.length && M.rec[li].d <= d) { lv = M.rec[li].v; linv = M.rec[li].inv; li++; }
+    while (ii < ibPts.length && ibPts[ii].d <= d) { iv = ibPts[ii].v; iinv = ibPts[ii].inv; ii++; }
+    const v = lv + iv, inv = linv + iinv, flow = inv - prevInv;
+    idx *= 1 + (prevV > 1e-6 ? (v - flow) / prevV - 1 : 0);
+    rec.push({ d, t: ms(d), v, inv, idx, cash: null });
+    prevV = v; prevInv = inv;
+  }
+  const end = { ...rec[rec.length - 1], cash: M.end.cash + (ib.cash || 0) };
+  rec[rec.length - 1] = end;
+  const holdings = M.holdings.map(h => ({ ...h, acct: 'DEGIRO' })).concat(ib.holdings.map(h => ({ ...h, acct: 'IBKR' }))).sort((a, b) => b.value - a.value);
+  const ibSales = ib.trades.filter(t => t.side === 'SELL').map(t => ({ date: t.date, ticker: t.ticker, name: t.name, qty: t.qty, price: t.price, ccy: t.ccy, avg: null, proceeds: t.amount, pnl: t.pnl, basis: t.amount - t.pnl, acct: 'IBKR' }));
+  return { rec, end, holdings, realized: M.realized.concat(ibSales).sort((a, b) => a.date < b.date ? -1 : 1), income: M.income, fees: M.fees, ibDiv: ib.dividends || 0 };
 }
 
 function render() {
@@ -861,7 +898,15 @@ function render() {
   $('pageTitle').textContent = titles[state.tab];
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.tab)));
   ['return', 'allocation', 'income', 'realized'].forEach(t => { $('view-' + t).hidden = t !== state.tab; });
-  const ib = state.source === 'ibkr' ? state.ib : null;
+  normaliseView();
+  const ib = curIB();
+  state.combined = state.view === 'all' ? buildCombined(state.model, state.ib) : null;
+  const both = canCombine();
+  $('acctBox').hidden = !both;
+  if (both) {
+    const localName = state.source === 'degiro' ? 'DEGIRO' : 'Imported';
+    $('acctSeg').innerHTML = [['all', 'All accounts'], ['local', localName], ['ibkr', 'IBKR']].map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${state.view === k}">${l}</button>`).join('');
+  }
   setCurrency(ib ? ib.baseCcy : 'EUR');
   const plist = ib ? ib.order : ['1M', '3M', '6M', 'YTD', '1Y', 'MAX'];
   const period = plist.includes(state.period) ? state.period : (plist.includes('1Y') ? '1Y' : plist[plist.length - 1]);
@@ -869,11 +914,11 @@ function render() {
   document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
   $('periodBox').hidden = state.tab === 'allocation';
   const chip = $('sourceChip');
-  chip.textContent = state.source === 'demo' ? 'Example portfolio' : ib ? 'IBKR live' : state.source === 'degiro' ? 'DEGIRO' : 'Your data';
-  $('pxBtn').hidden = state.source !== 'degiro';
-  chip.classList.toggle('demo', state.source === 'demo');
-  chip.classList.toggle('live', !!ib);
-  $('ibBtn').textContent = ib ? 'Refresh IBKR' : 'Connect IBKR';
+  chip.textContent = ib ? 'IBKR live' : state.view === 'all' ? 'All accounts' : state.source === 'demo' ? 'Example portfolio' : state.source === 'degiro' ? 'DEGIRO' : 'Your data';
+  $('pxBtn').hidden = state.source !== 'degiro' || !!ib;
+  chip.classList.toggle('demo', !ib && state.view === 'local' && state.source === 'demo');
+  chip.classList.toggle('live', !!ib || state.view === 'all');
+  $('ibBtn').textContent = state.ib ? 'Refresh IBKR' : 'Connect IBKR';
   if (ib) {
     const t = new Date(ib.updated), hm = t.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
     $('footNote').textContent = `Live from Interactive Brokers, fetched ${fmtDate(iso(t.getFullYear(), t.getMonth() + 1, t.getDate()))} ${hm}. Performance history last updated by IBKR ${ib.lastUpdate || 'recently'}. Amounts in ${ib.baseCcy}; positions in other currencies are converted at today's rate.`;
@@ -884,8 +929,20 @@ function render() {
     else renderRealizedIB(ib);
     return;
   }
-  const M = state.model;
+  const M = curModel();
   $('incNote').hidden = true; $('incChartCard').hidden = false; $('incTableCard').hidden = false;
+  if (state.view === 'all') {
+    const lastTx = state.data.txs.reduce((a, x) => x.date > a ? x.date : a, ''), t = new Date(state.ib.updated);
+    $('footNote').textContent = `All accounts added together: ${state.source === 'degiro' ? 'DEGIRO exports' : 'imported data'} up to ${fmtDate(lastTx)}, plus Interactive Brokers live (fetched ${t.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}). The return treats both as one portfolio; money moved between them counts as a withdrawal from one and a deposit into the other.`;
+    $('incNote').textContent = `Monthly income shows ${state.source === 'degiro' ? 'DEGIRO' : 'imported'} payments only. IBKR reports only a dividend total (${eur(state.ib.dividends || 0)}), which is included in the totals on the Return tab.`;
+    $('incNote').hidden = state.tab !== 'income';
+    const P = slicePeriod(M, period);
+    if (state.tab === 'return') renderReturn(P);
+    else if (state.tab === 'allocation') renderAllocation();
+    else if (state.tab === 'income') renderIncome(P);
+    else renderRealized(P);
+    return;
+  }
   $('rWinsLabel').textContent = 'Sales in profit'; $('rProcLabel').textContent = 'Proceeds from sales'; $('realTitle').textContent = 'Sales';
   if (state.source === 'degiro') {
     const lastTx = state.data.txs.reduce((a, x) => x.date > a ? x.date : a, '');
@@ -1030,12 +1087,13 @@ async function ibConnect() {
     const [alloc, trades] = await Promise.allSettled([ibCall('get_pa_allocation', { type: 'ASSET_CLASS' }), ibCall('get_account_trades', { period: 'YEAR_TO_DATE' })]);
     const at = [summary, positions, balances, perf].reduce((m, x) => Math.min(m, x.at), Infinity);
     state.ib = buildIB({ summary: summary.data, positions: positions.data, balances: balances.data, perf: perf.data, alloc: alloc.status === 'fulfilled' ? alloc.value.data : null, trades: trades.status === 'fulfilled' ? trades.value.data : null, updated: at });
-    state.source = 'ibkr'; store.set('rendement.source', 'ibkr');
+    store.set('rendement.ibkr', '1');
+    state.view = state.source !== 'demo' ? (store.get('rendement.view') || 'all') : 'ibkr';
     const missing = [alloc.status !== 'fulfilled' && 'asset-class allocation', trades.status !== 'fulfilled' && 'trade history'].filter(Boolean);
     ibStatus(missing.length ? `Connected, but IBKR did not return the ${missing.join(' and ')}. Those sections use what is available.` : null, 'warn');
     render();
   } catch (e) {
-    if (e && DENIALS.includes(e.code) && state.source === 'ibkr') { state.ib = null; bootLocal(); render(); }
+    if (e && DENIALS.includes(e.code) && state.ib) { state.ib = null; state.view = 'local'; store.del('rendement.ibkr'); render(); }
     ibStatus(ibErrorText(e) + (e && e.code ? ` <span class="foot">(code: ${esc(e.code)})</span>` : ''), 'err');
   } finally { IB.busy = false; $('ibBtn').disabled = false; }
 }
@@ -1048,17 +1106,13 @@ $('ibBtn').addEventListener('click', ibConnect);
   if (!mcp) return;
   IB.mcp = mcp;
   try { const lt = await mcp.listTools(); const s = (lt.servers || []).find(x => /ibkr|interactive.?brokers/i.test(x.server)); if (s) IB.server = s.server; } catch (e) { }
-  if (state.source === 'degiro' && (!state.dgPricesAt || Date.now() - state.dgPricesAt > 12 * 3600e3)) {
-    let st = 'prompt';
-    try { const perms = await window.claude.use('permissions'); if (perms) st = await perms.state('mcp:' + IB.server).catch(() => 'unavailable'); } catch (e) { }
-    if (st === 'granted') dgFetchPrices();
-    else if (!state.dgPricesAt) ibStatus('Choose <b>Update prices</b> to load daily market prices for your DEGIRO products.');
-  } else if (store.get('rendement.source') === 'ibkr') {
-    let st = 'prompt';
-    try { const perms = await window.claude.use('permissions'); if (perms) st = await perms.state('mcp:' + IB.server).catch(() => 'unavailable'); } catch (e) { }
-    if (st === 'granted') ibConnect();
-    else ibStatus('Choose <b>Connect IBKR</b> to load your live account again.');
-  }
+  let st = 'prompt';
+  try { const perms = await window.claude.use('permissions'); if (perms) st = await perms.state('mcp:' + IB.server).catch(() => 'unavailable'); } catch (e) { }
+  const wantIB = store.get('rendement.ibkr') === '1' || store.get('rendement.source') === 'ibkr';
+  const stale = state.source === 'degiro' && (!state.dgPricesAt || Date.now() - state.dgPricesAt > 12 * 3600e3);
+  if (st === 'granted') { if (wantIB) await ibConnect(); if (stale) await dgFetchPrices(); }
+  else if (wantIB) ibStatus('Choose <b>Connect IBKR</b> to load your live account again.');
+  else if (stale && !state.dgPricesAt) ibStatus('Choose <b>Update prices</b> to load daily market prices for your DEGIRO products.');
 })();
 
 /* ---------- DEGIRO exports (Transacties / Rekeningoverzicht) ---------- */
@@ -1194,6 +1248,7 @@ async function dgFetchPrices() {
 
 /* ---------- events ---------- */
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { state.tab = b.dataset.tab; try { history.replaceState(null, '', '#' + state.tab); } catch (e) { } render(); }));
+$('acctSeg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; state.view = b.dataset.v; store.set('rendement.view', state.view); render(); });
 $('periodSeg').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; state.period = b.dataset.p; store.set('rendement.period', state.period); render(); });
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { state.mode = b.dataset.mode; render(); }));
 $('importBtn').addEventListener('click', () => { const p = $('importPanel'); p.hidden = !p.hidden; $('importBtn').textContent = p.hidden ? 'Import your data' : 'Close import'; if (!p.hidden) $('csvInput').focus(); });
@@ -1210,7 +1265,7 @@ $('csvFile').addEventListener('change', async e => {
       dgSaveFiles(files.filter(f => f.kind)); store.del(KEY_DGP); store.set('rendement.source', 'degiro');
       const noAcc = !files.some(f => f.kind === 'account');
       msg(`Imported DEGIRO: ${st.trades} trades, ${st.flows} deposit and withdrawal lines, ${st.dividends} dividend payments.` + (noAcc ? ' Add Account.csv as well for deposits and dividends.' : ''), true);
-      render(); dgFetchPrices();
+      state.view = state.ib ? 'all' : 'local'; render(); dgFetchPrices();
     } catch (err) { msg(err.message); }
     return;
   }
@@ -1220,7 +1275,7 @@ $('pxBtn').addEventListener('click', dgFetchPrices);
 $('applyCsv').addEventListener('click', () => {
   try {
     const text = $('csvInput').value, { data, errors } = parseCSV(text);
-    loadData(data, 'import'); store.set(KEY, text); store.del(KEY_DG); store.set('rendement.source', 'import'); ibStatus(null);
+    loadData(data, 'import'); store.set(KEY, text); store.del(KEY_DG); store.set('rendement.source', 'import'); ibStatus(null); state.view = state.ib ? 'all' : 'local';
     msg(`Imported ${data.txs.length} transactions` + (errors.length ? `. Skipped ${errors.length} row${errors.length === 1 ? '' : 's'}: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '…' : ''}` : '.'), true);
     render();
   } catch (err) { msg(err.message); }

@@ -48,6 +48,14 @@ from the day the account was opened, and choose both files at once under **Impor
   and converts US listings at each day's EUR/USD rate. Without the connector, values use your last trade prices.
 - The Return tile shows the time-weighted return and, next to it, the money-weighted return (Modified Dietz).
 
+## All accounts
+
+With DEGIRO (or another import) loaded and IBKR connected, an account switch appears: **All accounts**,
+**DEGIRO** and **IBKR**. All accounts adds both daily value series and their deposits together and computes
+one time-weighted and money-weighted return over the combined portfolio. Positions and sales are listed
+with the account they belong to. IBKR's dividend total is included in net income; monthly income shows
+DEGIRO payments only, because the IBKR connector does not report individual payments.
+
 ## Your own data
 
 Click **Import your data** and paste or choose a CSV:
