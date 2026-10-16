@@ -15,6 +15,25 @@ Open `index.html` in a browser. No build step, no server, no dependencies.
 - **Income**: dividends and interest per month, plus every payment.
 - **Realized**: every sale with average cost, proceeds and realized PnL.
 
+## Live from Interactive Brokers
+
+When the page is opened as a claude.ai artifact, **Connect IBKR** reads your account through your
+Interactive Brokers connector in claude.ai (read-only: account summary, positions, balances,
+performance history, asset-class allocation and this year's trades). claude.ai asks for permission
+the first time. No credentials or account data are stored in the page; it remembers only that you chose IBKR,
+and loads the account again on your next visit if access is still allowed.
+
+What IBKR provides and how it is used:
+
+- **Return and chart**: IBKR's own performance series (`7D`, `MTD`, `1M`, `YTD`, `1Y`), time-weighted
+  unless your account is set to money-weighted. Deposits and withdrawals are derived from each day's NAV
+  change beyond that day's return, which gives total PnL and net deposits.
+- **Positions**: quantities, average cost and unrealized PnL; amounts in other currencies are converted
+  to your base currency at today's rate.
+- **Realized**: this year's trades (currency conversions left out), with IBKR's realized PnL for sales.
+- **Income**: the connector only reports a dividend total, not individual payments, so the monthly chart
+  needs a CSV import.
+
 ## Your own data
 
 Click **Import your data** and paste or choose a CSV:

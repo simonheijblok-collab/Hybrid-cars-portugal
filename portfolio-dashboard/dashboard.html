@@ -69,6 +69,12 @@ button { font: inherit; color: inherit; }
 .brand svg { flex: none; }
 .brand b { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
 .chip { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); color: var(--fg-2); background: var(--surface); }
+.chip.live { color: var(--pos); border-color: color-mix(in srgb, var(--pos) 45%, transparent); background: var(--pos-soft); display: inline-flex; align-items: center; gap: 6px; }
+.chip.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--pos); }
+.status { font-size: 13px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg-2); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.status.err { border-color: color-mix(in srgb, var(--neg) 55%, transparent); color: var(--fg); }
+.status.warn { border-color: color-mix(in srgb, var(--c4) 55%, transparent); }
+.btn:disabled { opacity: .55; cursor: progress; }
 .chip.demo { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
 .btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: 500; }
 .btn:hover { border-color: var(--muted); }
@@ -177,8 +183,10 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
       <b>Rendement</b>
     </div>
     <span id="sourceChip" class="chip demo">Example portfolio</span>
+    <button id="ibBtn" class="btn" type="button" hidden>Connect IBKR</button>
     <button id="importBtn" class="btn primary" type="button">Import your data</button>
   </header>
+  <div id="ibStatus" class="status" role="status" hidden></div>
 
   <section id="importPanel" class="card panel" hidden aria-labelledby="importTitle">
     <h2 id="importTitle" class="section-title">Import transactions</h2>
@@ -215,14 +223,7 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
       </div>
     </div>
     <div class="scroller" id="periodBox">
-      <div class="seg small" aria-label="Period">
-        <button data-p="1M" aria-pressed="false">1M</button>
-        <button data-p="3M" aria-pressed="false">3M</button>
-        <button data-p="6M" aria-pressed="false">6M</button>
-        <button data-p="YTD" aria-pressed="false">YTD</button>
-        <button data-p="1Y" aria-pressed="false">1Y</button>
-        <button data-p="MAX" aria-pressed="true">MAX</button>
-      </div>
+      <div class="seg small" aria-label="Period" id="periodSeg"></div>
     </div>
   </div>
 
@@ -305,15 +306,16 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
     <div class="grid4">
       <div class="card tile"><div class="label">Net income</div><div class="mid" id="iTotal"></div><div class="sub" id="iTotalSub"></div></div>
       <div class="card tile"><div class="label">Dividends</div><div class="mid" id="iDiv"></div><div class="sub" id="iDivSub"></div></div>
-      <div class="card tile"><div class="label">Interest</div><div class="mid" id="iInt"></div><div class="sub">On uninvested cash</div></div>
+      <div class="card tile"><div class="label">Interest</div><div class="mid" id="iInt"></div><div class="sub" id="iIntSub">On uninvested cash</div></div>
       <div class="card tile"><div class="label">Monthly average</div><div class="mid" id="iAvg"></div><div class="sub" id="iAvgSub"></div></div>
     </div>
-    <section class="card" aria-labelledby="incChartTitle">
+    <p class="foot" id="incNote" hidden></p>
+    <section class="card" id="incChartCard" aria-labelledby="incChartTitle">
       <div class="chart-head"><h2 id="incChartTitle">Income per month</h2></div>
       <div class="legend"><span><i class="box" style="background:var(--c1)"></i>Dividends</span><span><i class="box" style="background:var(--c3)"></i>Interest</span></div>
       <div class="chart" id="incChart"></div>
     </section>
-    <section class="card" aria-labelledby="incTableTitle">
+    <section class="card" id="incTableCard" aria-labelledby="incTableTitle">
       <h2 id="incTableTitle" class="section-title">Payments</h2>
       <div class="tablewrap tall" id="incTable"></div>
     </section>
@@ -322,8 +324,8 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
   <main id="view-realized" class="stack" role="tabpanel" aria-labelledby="tab-realized" hidden>
     <div class="grid3">
       <div class="card tile"><div class="label">Realized PnL</div><div class="big" id="rTotal"></div><div class="sub" id="rTotalSub"></div></div>
-      <div class="card tile"><div class="label">Sales in profit</div><div class="big" id="rWins"></div><div class="sub" id="rWinsSub"></div></div>
-      <div class="card tile"><div class="label">Proceeds from sales</div><div class="big" id="rProc"></div><div class="sub" id="rProcSub"></div></div>
+      <div class="card tile"><div class="label" id="rWinsLabel">Sales in profit</div><div class="big" id="rWins"></div><div class="sub" id="rWinsSub"></div></div>
+      <div class="card tile"><div class="label" id="rProcLabel">Proceeds from sales</div><div class="big" id="rProc"></div><div class="sub" id="rProcSub"></div></div>
     </div>
     <section class="card" aria-labelledby="realTitle">
       <h2 id="realTitle" class="section-title">Sales</h2>
@@ -355,7 +357,10 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 const fmtDate = s => `${+s.slice(8, 10)} ${MON[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;
 const fmtMonth = s => `${MON[+s.slice(5, 7) - 1]} '${s.slice(2, 4)}`;
 
-const EUR = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' });
+let EUR = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }), CUR_SYM = '€';
+function setCurrency(c) { try { EUR = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: c }); CUR_SYM = (EUR.formatToParts(0).find(x => x.type === 'currency') || {}).value || c; } catch (e) { } }
+const FMT_CACHE = {};
+const money = (v, c) => { if (!c) return eur(v); try { return (FMT_CACHE[c] || (FMT_CACHE[c] = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: c }))).format(v); } catch (e) { return eur(v); } };
 const eur = v => EUR.format(Math.abs(v) < 0.005 ? 0 : v);
 const seur = v => (v > 0.004 ? '+' : v < -0.004 ? '−' : '') + EUR.format(Math.abs(v) < 0.005 ? 0 : Math.abs(v));
 const NF2 = new Intl.NumberFormat('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -602,7 +607,7 @@ function xTicks(a, b, W) {
   }
   return out;
 }
-const axisEur = v => { const a = Math.abs(v); const s = a >= 1000 ? (a / 1000).toLocaleString('nl-NL', { maximumFractionDigits: 1 }) + 'k' : Math.round(a).toString(); return (v < 0 ? '−€' : '€') + s; };
+const axisEur = v => { const a = Math.abs(v); const s = a >= 1000 ? (a / 1000).toLocaleString('nl-NL', { maximumFractionDigits: 1 }) + 'k' : Math.round(a).toString(); return (v < 0 ? '−' : '') + CUR_SYM + s; };
 const axisPct = v => (v < 0 ? '−' : '') + Math.round(Math.abs(v * 100) * 10) / 10 + '%';
 let uid = 0;
 
@@ -734,18 +739,19 @@ function loadData(data, source) { state.data = data; state.source = source; stat
 const hashTab = location.hash.slice(1); if (['return', 'allocation', 'income', 'realized'].includes(hashTab)) state.tab = hashTab;
 
 /* ---------- render ---------- */
-const PERIOD_LABEL = { '1M': 'last month', '3M': 'last 3 months', '6M': 'last 6 months', 'YTD': 'this year', '1Y': 'last 12 months', 'MAX': 'all time' };
+const PERIOD_LABEL = { '7D': 'last 7 days', 'MTD': 'this month', '1M': 'last month', '3M': 'last 3 months', '6M': 'last 6 months', 'YTD': 'this year', '1Y': 'last 12 months', 'MAX': 'all time' };
 function setMoney(id, v, signed) { const el = $(id); el.textContent = signed ? seur(v) : eur(v); el.className = el.className.replace(/\b(pos|neg)\b/g, '').trim() + (signed && cls(v) ? ' ' + cls(v) : ''); }
 
 function renderReturn(P) {
-  const M = state.model, e = P.end;
-  setMoney('kValue', e.v);
-  $('kValueSub').textContent = P.base.d ? `${seur(e.v - P.base.v)} since ${fmtDate(P.startDate)}` : `Tracked since ${fmtDate(M.rec[0].d)}`;
+  const ib = state.source === 'ibkr' ? state.ib : null, M = ib || state.model, e = P.end;
+  const nowV = ib ? ib.nav : e.v, nowCash = ib ? ib.cash : e.cash;
+  setMoney('kValue', nowV);
+  $('kValueSub').textContent = P.base.d ? `${seur(e.v - P.base.v)} since ${fmtDate(P.startDate)}` : `Tracked since ${fmtDate(P.pts[0].d)}`;
   setMoney('kPnl', P.pnl, true);
   const flows = e.inv - P.base.inv;
   $('kPnlSub').textContent = P.key === 'MAX' ? `${pct(e.inv > 0 ? P.pnl / e.inv : 0)} on net deposits of ${eur(e.inv)}` : `Net deposits in period: ${seur(flows)}`;
   const r = $('kRet'); r.textContent = pct(P.ret); r.className = 'big ' + cls(P.ret);
-  $('kRetSub').textContent = `Time-weighted, ${PERIOD_LABEL[P.key]}`;
+  $('kRetSub').textContent = `${ib && ib.measure === 'MWR' ? 'Money-weighted' : 'Time-weighted'}, ${PERIOD_LABEL[P.key] || P.key}`;
   const ys = P.pts.map(p => p.v), pnlYs = P.pts.map(p => (p.v - P.base.v) - (p.inv - P.base.inv)), retYs = P.pts.map(p => p.idx / P.base.idx - 1);
   spark($('sValue'), ys, 'var(--accent)');
   spark($('sPnl'), pnlYs, P.pnl >= 0 ? 'var(--pos)' : 'var(--neg)');
@@ -754,19 +760,24 @@ function renderReturn(P) {
   const unr = M.holdings.reduce((a, h) => a + h.pnl, 0), cost = M.holdings.reduce((a, h) => a + h.cost, 0);
   setMoney('kUnr', unr, true); $('kUnrSub').textContent = `${pct(cost ? unr / cost : 0)} on ${M.holdings.length} open position${M.holdings.length === 1 ? '' : 's'}`;
   const real = P.realized.reduce((a, x) => a + x.pnl, 0);
-  setMoney('kReal', real, true); $('kRealSub').textContent = `${P.realized.length} sale${P.realized.length === 1 ? '' : 's'}, after costs`;
-  const inc = P.div + P.int - P.fee;
-  setMoney('kInc', inc, true);
-  $('kIncRows').innerHTML = `<div><span>Dividends</span><span>${eur(P.div)}</span></div><div><span>Interest</span><span>${eur(P.int)}</span></div><div><span>Fees</span><span>${P.fee ? seur(-P.fee) : eur(0)}</span></div>`;
-  setMoney('kCash', e.cash);
-  const cp = e.v > 0 ? Math.max(0, e.cash / e.v) : 0;
+  setMoney('kReal', real, true); $('kRealSub').textContent = `${P.realized.length} sale${P.realized.length === 1 ? '' : 's'}${ib ? ' this year (from IBKR trades)' : ', after costs'}`;
+  if (ib) {
+    setMoney('kInc', ib.dividends || 0, true);
+    $('kIncRows').innerHTML = `<div><span>Dividends (IBKR)</span><span>${eur(ib.dividends || 0)}</span></div><div><span>Interest and fees</span><span>not in IBKR feed</span></div>`;
+  } else {
+    setMoney('kInc', P.div + P.int - P.fee, true);
+    $('kIncRows').innerHTML = `<div><span>Dividends</span><span>${eur(P.div)}</span></div><div><span>Interest</span><span>${eur(P.int)}</span></div><div><span>Fees</span><span>${P.fee ? seur(-P.fee) : eur(0)}</span></div>`;
+  }
+  setMoney('kCash', nowCash);
+  const cp = nowV > 0 ? Math.max(0, nowCash / nowV) : 0;
   $('kCashBar').style.width = Math.min(100, cp * 100).toFixed(1) + '%';
   $('kCashSub').textContent = `${NF2.format(cp * 100)}% of portfolio`;
-  $('kCashRows').innerHTML = `<div><span>Net deposited, full history</span><span>${eur(e.inv)}</span></div>`;
+  if (ib) { const lp = ib.periods[ib.order[ib.order.length - 1]]; $('kCashRows').innerHTML = lp ? `<div><span>Net deposits since ${fmtDate(lp.startDate)}</span><span>${eur(lp.end.inv)}</span></div>` : ''; }
+  else $('kCashRows').innerHTML = `<div><span>Net deposited, full history</span><span>${eur(e.inv)}</span></div>`;
 
   const fig = $('chartFig');
   if (state.mode === 'return') { fig.textContent = pct(P.ret); fig.className = 'mid ' + cls(P.ret); }
-  else { fig.textContent = eur(e.v); fig.className = 'mid'; }
+  else { fig.textContent = eur(nowV); fig.className = 'mid'; }
   const xs = P.pts.map(p => p.t);
   if (state.mode === 'return') {
     $('mainLegend').innerHTML = '';
@@ -784,21 +795,29 @@ function renderReturn(P) {
     });
   }
   const rows = P.pts.filter((p, i) => i === P.pts.length - 1 || P.pts[i + 1].d.slice(0, 7) !== p.d.slice(0, 7));
-  $('mainTable').innerHTML = `<table><thead><tr><th>Date</th><th>Value</th><th>Net deposits</th><th>Cash</th><th>Return</th></tr></thead><tbody>${rows.slice().reverse().map(p => `<tr><td>${fmtDate(p.d)}</td><td>${eur(p.v)}</td><td>${eur(p.inv)}</td><td>${eur(p.cash)}</td><td class="${cls(p.idx / P.base.idx - 1)}">${pct(p.idx / P.base.idx - 1)}</td></tr>`).join('')}</tbody></table>`;
+  $('mainTable').innerHTML = `<table><thead><tr><th>Date</th><th>Value</th><th>Net deposits</th><th>Cash</th><th>Return</th></tr></thead><tbody>${rows.slice().reverse().map(p => `<tr><td>${fmtDate(p.d)}</td><td>${eur(p.v)}</td><td>${eur(p.inv)}</td><td>${p.cash == null ? '—' : eur(p.cash)}</td><td class="${cls(p.idx / P.base.idx - 1)}">${pct(p.idx / P.base.idx - 1)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function renderAllocation() {
-  const M = state.model, total = M.end.v, byCat = {};
-  M.holdings.forEach(h => { byCat[h.category] = (byCat[h.category] || 0) + h.value; });
-  const cats = Object.keys(byCat).sort((a, b) => { const ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
-  const parts = cats.map((c, i) => ({ cat: c, value: byCat[c], color: catColor(c, i) }));
-  if (M.end.cash > 0.005) parts.push({ cat: 'Cash', value: M.end.cash, color: 'var(--cash)' });
-  const pos = parts.reduce((a, p) => a + p.value, 0) || 1; parts.forEach(p => p.frac = p.value / pos);
+  const ib = state.source === 'ibkr' ? state.ib : null, M = ib || state.model, total = ib ? ib.nav : M.end.v, cash = ib ? ib.cash : M.end.cash, byCat = {};
+  let parts;
+  if (ib && ib.alloc && ib.alloc.length) {
+    let k = 0;
+    parts = ib.alloc.filter(a => a.frac > 0).map(a => { const isCash = /^cash$/i.test(a.cat); return { cat: a.cat, frac: a.frac, value: a.frac * total, color: isCash ? 'var(--cash)' : catColor(a.cat, k++) }; });
+    parts.sort((a, b) => (a.cat === 'Cash') - (b.cat === 'Cash'));
+  } else {
+    M.holdings.forEach(h => { byCat[h.category] = (byCat[h.category] || 0) + h.value; });
+    const cats = Object.keys(byCat).sort((a, b) => { const ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
+    parts = cats.map((c, i) => ({ cat: c, value: byCat[c], color: catColor(c, i) }));
+    if (cash > 0.005) parts.push({ cat: 'Cash', value: cash, color: 'var(--cash)' });
+    const pos = parts.reduce((a, p) => a + p.value, 0) || 1; parts.forEach(p => p.frac = p.value / pos);
+  }
   donut($('donut'), parts, total);
   $('allocLegend').innerHTML = parts.map(p => `<div><i style="background:${p.color}"></i><span>${esc(p.cat)}</span><span class="val">${eur(p.value)}</span><span class="pc">${NF2.format(p.frac * 100)}%</span></div>`).join('');
   const catIdx = Object.fromEntries(parts.map(p => [p.cat, p.color]));
+  if (ib) { let k = parts.length; M.holdings.forEach(h => { if (!catIdx[h.category]) catIdx[h.category] = catColor(h.category, Math.min(4, k++)); }); }
   const tc = M.holdings.reduce((a, h) => a + h.cost, 0), tv = M.holdings.reduce((a, h) => a + h.value, 0);
-  $('holdTable').innerHTML = `<table><thead><tr><th>Asset</th><th>Quantity</th><th>Avg cost</th><th>Price</th><th>Value</th><th>Unrealized</th><th>Weight</th></tr></thead><tbody>${M.holdings.map(h => `<tr><td><span class="tk"><i class="sw" style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;background:${catIdx[h.category]}"></i>${esc(h.ticker)}</span><span class="nm">${esc(h.name)} · ${esc(h.category)}</span></td><td>${qtyFmt.format(h.qty)}</td><td>${eur(h.avg)}</td><td>${eur(h.price)}<span class="nm">${h.priceDate ? fmtDate(h.priceDate) : ''}</span></td><td>${eur(h.value)}</td><td class="${cls(h.pnl)}">${seur(h.pnl)}<span class="nm">${pct(h.cost ? h.pnl / h.cost : 0)}</span></td><td>${NF2.format(total ? h.value / total * 100 : 0)}%</td></tr>`).join('') || '<tr><td colspan="7">No open positions.</td></tr>'}</tbody><tfoot><tr><td>Total invested</td><td></td><td></td><td></td><td>${eur(tv)}</td><td class="${cls(tv - tc)}">${seur(tv - tc)}</td><td>${NF2.format(total ? tv / total * 100 : 0)}%</td></tr></tfoot></table>`;
+  $('holdTable').innerHTML = `<table><thead><tr><th>Asset</th><th>Quantity</th><th>Avg cost</th><th>Price</th><th>Value</th><th>Unrealized</th><th>Weight</th></tr></thead><tbody>${M.holdings.map(h => `<tr><td><span class="tk">${ib ? '' : `<i class="sw" style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;background:${catIdx[h.category]}"></i>`}${esc(h.ticker)}</span><span class="nm">${esc(h.name)} · ${esc(h.category)}</span></td><td>${qtyFmt.format(h.qty)}</td><td>${money(h.avg, h.ccy)}</td><td>${money(h.price, h.ccy)}<span class="nm">${h.priceDate ? fmtDate(h.priceDate) : h.ccy && ib && h.ccy !== ib.baseCcy ? h.ccy : ''}</span></td><td>${eur(h.value)}</td><td class="${cls(h.pnl)}">${seur(h.pnl)}<span class="nm">${pct(h.cost ? h.pnl / h.cost : 0)}</span></td><td>${NF2.format(total ? h.value / total * 100 : 0)}%</td></tr>`).join('') || '<tr><td colspan="7">No open positions.</td></tr>'}</tbody><tfoot><tr><td>Total invested</td><td></td><td></td><td></td><td>${eur(tv)}</td><td class="${cls(tv - tc)}">${seur(tv - tc)}</td><td>${NF2.format(total ? tv / total * 100 : 0)}%</td></tr></tfoot></table>`;
 }
 
 function renderIncome(P) {
@@ -830,26 +849,192 @@ function render() {
   $('pageTitle').textContent = titles[state.tab];
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.tab)));
   ['return', 'allocation', 'income', 'realized'].forEach(t => { $('view-' + t).hidden = t !== state.tab; });
-  document.querySelectorAll('[data-p]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === state.period)));
+  const ib = state.source === 'ibkr' ? state.ib : null;
+  setCurrency(ib ? ib.baseCcy : 'EUR');
+  const plist = ib ? ib.order : ['1M', '3M', '6M', 'YTD', '1Y', 'MAX'];
+  const period = plist.includes(state.period) ? state.period : (plist.includes('1Y') ? '1Y' : plist[plist.length - 1]);
+  $('periodSeg').innerHTML = plist.map(k => `<button type="button" data-p="${k}" aria-pressed="${k === period}">${k}</button>`).join('');
   document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
   $('periodBox').hidden = state.tab === 'allocation';
   const chip = $('sourceChip');
-  chip.textContent = state.source === 'demo' ? 'Example portfolio' : 'Your data';
+  chip.textContent = state.source === 'demo' ? 'Example portfolio' : ib ? 'IBKR live' : 'Your data';
   chip.classList.toggle('demo', state.source === 'demo');
+  chip.classList.toggle('live', !!ib);
+  $('ibBtn').textContent = ib ? 'Refresh IBKR' : 'Connect IBKR';
+  if (ib) {
+    const t = new Date(ib.updated), hm = t.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    $('footNote').textContent = `Live from Interactive Brokers, fetched ${fmtDate(iso(t.getFullYear(), t.getMonth() + 1, t.getDate()))} ${hm}. Performance history last updated by IBKR ${ib.lastUpdate || 'recently'}. Amounts in ${ib.baseCcy}; positions in other currencies are converted at today's rate.`;
+    const P = ibPeriod(ib, period);
+    if (state.tab === 'return') renderReturn(P);
+    else if (state.tab === 'allocation') renderAllocation();
+    else if (state.tab === 'income') renderIncomeIB(ib);
+    else renderRealizedIB(ib);
+    return;
+  }
   const M = state.model;
+  $('incNote').hidden = true; $('incChartCard').hidden = false; $('incTableCard').hidden = false;
+  $('rWinsLabel').textContent = 'Sales in profit'; $('rProcLabel').textContent = 'Proceeds from sales'; $('realTitle').textContent = 'Sales';
   $('footNote').textContent = state.source === 'demo'
     ? 'The figures shown are a generated example portfolio, not real holdings or prices. Import your own transactions to see your real return.'
     : `Values use the latest price you supplied for each asset (last update ${fmtDate(M.holdings.reduce((a, h) => h.priceDate > a ? h.priceDate : a, M.rec[0].d))}). Add price rows to keep it current.`;
-  const P = slicePeriod(M, state.period);
+  const P = slicePeriod(M, period);
   if (state.tab === 'return') renderReturn(P);
   else if (state.tab === 'allocation') renderAllocation();
   else if (state.tab === 'income') renderIncome(P);
   else renderRealized(P);
 }
 
+/* ---------- Interactive Brokers (live, through the viewer's claude.ai connector) ---------- */
+const IB = { mcp: null, server: 'Interactive_Brokers_IBKR', busy: false };
+const AC = { STK: 'Stocks', ETF: 'ETF', CRYPTO: 'Crypto', BOND: 'Bonds', BILL: 'Bonds', OPT: 'Options', FOP: 'Options', FUT: 'Futures', WAR: 'Warrants', FUND: 'Funds', CMDTY: 'Commodities', CASH: 'Cash' };
+const ibDate = s => String(s).slice(0, 4) + '-' + String(s).slice(4, 6) + '-' + String(s).slice(6, 8);
+const titleCase = s => String(s).toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\b(Inc|Corp|Ltd|Plc|Nv|Sa|Ag|Etf)\b/g, w => w.toUpperCase() === 'ETF' ? 'ETF' : w);
+
+function ibStatus(html, kind) {
+  const el = $('ibStatus');
+  if (!html) { el.hidden = true; el.innerHTML = ''; return; }
+  el.innerHTML = html; el.className = 'status' + (kind ? ' ' + kind : ''); el.hidden = false;
+}
+function ibErrorText(e) {
+  const code = e && e.code;
+  switch (code) {
+    case 'needs_reauth': return 'Your Interactive Brokers connection has expired. Reconnect it in claude.ai Settings → Connectors, then choose Connect IBKR again.';
+    case 'server_not_connected': case 'server_not_found': return 'Interactive Brokers is not connected to your Claude account. Add it in claude.ai Settings → Connectors, then choose Connect IBKR.';
+    case 'selection_required': return 'You have more than one Interactive Brokers connection. Pick one when claude.ai asks, then choose Connect IBKR again.';
+    case 'not_in_manifest': case 'approval_required': case 'consent_required': return 'This page is not allowed to read your IBKR account. Choose Connect IBKR and allow access when claude.ai asks.';
+    case 'blocked_by_policy': return 'Your organisation does not allow this page to use the Interactive Brokers connector.';
+    case 'server_unavailable': case 'rate_limited': return 'Interactive Brokers did not respond. Wait a minute, then choose Connect IBKR again.';
+    case 'tool_error': return 'Interactive Brokers returned an error: ' + esc(e.message || 'no details') + '.';
+    case 'not_granted': case 'capability_disabled': case 'capability_removed': return 'Live connectors are not available in this view. Open the page on claude.ai to connect IBKR.';
+    default: return 'Loading from Interactive Brokers failed' + (e && e.message ? ': ' + esc(e.message) : '') + '. Choose Connect IBKR to try again.';
+  }
+}
+const DENIALS = ['needs_reauth', 'server_not_connected', 'server_not_found', 'selection_required', 'not_in_manifest', 'approval_required', 'consent_required', 'blocked_by_policy', 'not_granted', 'capability_disabled', 'capability_removed', 'user_changed'];
+
+async function ibCall(tool, input) {
+  const run = () => IB.mcp.callTool(IB.server, tool, input, { cache: { staleTime: 60000 } });
+  let res;
+  try { res = await run(); }
+  catch (e) {
+    if (!(e && e.retryable)) throw e;
+    await new Promise(r => setTimeout(r, Math.min(60000, e.retryAfterMs || 800 + Math.random() * 1200)));
+    res = await run();
+  }
+  let data = res.payload;
+  if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) { } }
+  return { data: data || {}, at: res.cache ? res.cache.storedAt : Date.now() };
+}
+
+function ibSeries(p) {
+  const startNav = +p.start_nav || 0, sd = ibDate(p.start_date), pts = [];
+  let prevNav = startNav, prevC = 0, inv = 0;
+  if (startNav > 0) pts.push({ d: sd, t: ms(sd), v: startNav, inv: 0, idx: 1, cash: null });
+  p.dates.forEach((d, i) => {
+    const c = +p.cps[i] || 0, nav = +p.nav[i] || 0, r = (1 + c) / (1 + prevC) - 1;
+    // the money that moved in or out that day: what the NAV did beyond the day's return
+    let flow = nav - prevNav * (1 + r);
+    if (Math.abs(flow) < Math.max(0.05, Math.abs(nav) * 0.001)) flow = 0;
+    inv += flow;
+    const D = ibDate(d);
+    pts.push({ d: D, t: ms(D), v: nav, inv, idx: 1 + c, cash: null });
+    prevNav = nav; prevC = c;
+  });
+  const end = pts[pts.length - 1];
+  return { pts, base: { v: startNav, inv: 0, idx: 1, d: startNav > 0 ? sd : null }, startDate: sd, end, ret: end.idx - 1, pnl: end.v - startNav - end.inv };
+}
+
+function buildIB(r) {
+  const S = r.summary || {}, baseCcy = S.currency || 'EUR', rates = { [baseCcy]: 1 };
+  ((r.balances && r.balances.balances) || []).forEach(b => { if (b.currency && b.currency !== 'BASE' && isFinite(b.exchange_rate) && b.exchange_rate > 0) rates[b.currency] = b.exchange_rate; });
+  const fx = c => rates[c] ?? 1;
+  const acct = r.perf && r.perf.accounts ? Object.values(r.perf.accounts)[0] : null;
+  const periods = {}, order = [];
+  if (acct && acct.periods) for (const k of (acct.available_periods || Object.keys(acct.periods))) {
+    const p = acct.periods[k];
+    if (p && p.dates && p.dates.length >= 2) { periods[k] = ibSeries(p); order.push(k); }
+  }
+  const rawTrades = (r.trades && r.trades.trades) || [], names = {};
+  rawTrades.forEach(t => { if (t.symbol && t.company_name) names[t.symbol] = titleCase(t.company_name); });
+  const holdings = ((r.positions && r.positions.positions) || []).filter(x => x.position).map(x => {
+    const k = fx(x.currency);
+    return { ticker: x.contract_description, name: names[x.contract_description] || x.contract_description, category: AC[x.asset_class] || x.asset_class || 'Other', qty: x.position, avg: x.average_price, price: x.market_price, ccy: x.currency || baseCcy, value: x.market_value * k, cost: x.average_price * x.position * k, pnl: (x.unrealized_pnl || 0) * k };
+  }).sort((a, b) => b.value - a.value);
+  const trades = rawTrades.filter(t => t.sec_type !== 'CASH').map(t => ({
+    date: String(t.trade_time).slice(0, 10), ticker: t.symbol, name: names[t.symbol] || t.symbol, side: t.side, qty: t.size, price: t.price, ccy: t.currency, fee: t.commission || 0,
+    pnl: (t.realized_pnl || 0) * fx(t.currency), amount: Math.abs(t.net_amount || 0) * fx(t.currency),
+  })).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  const ac = r.alloc && r.alloc.allocations && r.alloc.allocations.ASSET_CLASS;
+  const alloc = ac && ac.long_positions && ac.long_positions.items ? ac.long_positions.items.map(i => ({ cat: i.name, frac: i.weight })) : null;
+  return {
+    baseCcy, nav: S.net_liquidation ?? (order.length ? periods[order[order.length - 1]].end.v : 0), cash: S.total_cash_value ?? 0, dividends: S.dividends ?? 0,
+    holdings, trades, periods, order, alloc, measure: r.perf && r.perf.portfolio_measure, lastUpdate: acct && acct.last_successful_update, updated: r.updated,
+  };
+}
+function ibPeriod(ib, key) {
+  const p = ib.periods[key];
+  if (!p) { const v = ib.nav, pt = { d: TODAY, t: ms(TODAY), v, inv: 0, idx: 1, cash: null }; return { key, pts: [pt, pt], base: { v, inv: 0, idx: 1, d: TODAY }, startDate: TODAY, end: pt, ret: 0, pnl: 0, realized: [] }; }
+  const sales = ib.trades.filter(t => t.side === 'SELL' && t.date > p.startDate).map(t => ({ ...t, pnl: t.pnl }));
+  return { key, ...p, realized: sales };
+}
+
+function renderIncomeIB(ib) {
+  setMoney('iTotal', ib.dividends || 0, true); $('iTotalSub').textContent = 'Dividends as reported by IBKR';
+  setMoney('iDiv', ib.dividends || 0); $('iDivSub').textContent = 'Account total from IBKR';
+  $('iInt').textContent = '—'; $('iIntSub').textContent = 'Not in the IBKR connector';
+  $('iAvg').textContent = '—'; $('iAvgSub').textContent = 'Needs payment history';
+  $('incNote').textContent = 'The Interactive Brokers connector reports your dividend total but not the individual payments, so there is no monthly chart for a live account. Import an IBKR activity statement as CSV to see income per month.';
+  $('incNote').hidden = false; $('incChartCard').hidden = true; $('incTableCard').hidden = true;
+}
+function renderRealizedIB(ib) {
+  const T = ib.trades, sells = T.filter(t => t.side === 'SELL'), tot = sells.reduce((a, t) => a + t.pnl, 0), wins = sells.filter(t => t.pnl > 0).length;
+  setMoney('rTotal', tot, true); $('rTotalSub').textContent = `${sells.length} sale${sells.length === 1 ? '' : 's'} this year`;
+  $('rWinsLabel').textContent = 'Sales in profit';
+  $('rWins').textContent = `${wins} of ${sells.length}`; $('rWinsSub').textContent = sells.length ? `${Math.round(wins / sells.length * 100)}% closed with a gain` : 'No sales this year';
+  $('rProcLabel').textContent = 'Trades this year';
+  $('rProc').textContent = String(T.length); $('rProcSub').textContent = `${T.length - sells.length} buys, ${sells.length} sells (currency conversions left out)`;
+  $('realTitle').textContent = 'Trades this year';
+  $('realTable').innerHTML = `<table><thead><tr><th>Date</th><th>Asset</th><th>Side</th><th>Quantity</th><th>Price</th><th>Commission</th><th>Realized</th></tr></thead><tbody>${T.map(t => `<tr><td>${fmtDate(t.date)}</td><td><span class="tk">${esc(t.ticker)}</span><span class="nm">${esc(t.name)}</span></td><td>${t.side === 'SELL' ? 'Sell' : 'Buy'}</td><td>${qtyFmt.format(t.qty)}</td><td>${money(t.price, t.ccy)}</td><td>${money(t.fee, t.ccy)}</td><td class="${t.side === 'SELL' ? cls(t.pnl) : ''}">${t.side === 'SELL' ? seur(t.pnl) : '—'}</td></tr>`).join('') || '<tr><td colspan="7">No trades this year.</td></tr>'}</tbody></table>`;
+}
+
+async function ibConnect() {
+  if (IB.busy || !IB.mcp) return;
+  IB.busy = true; $('ibBtn').disabled = true;
+  ibStatus('Loading your account from Interactive Brokers…');
+  try {
+    const summary = await ibCall('get_account_summary'); // first call: claude.ai asks for access here
+    const [positions, balances, perf] = await Promise.all([ibCall('get_account_positions'), ibCall('get_account_balances'), ibCall('get_pa_performance_all_periods')]);
+    const [alloc, trades] = await Promise.allSettled([ibCall('get_pa_allocation', { type: 'ASSET_CLASS' }), ibCall('get_account_trades', { period: 'YEAR_TO_DATE' })]);
+    const at = [summary, positions, balances, perf].reduce((m, x) => Math.min(m, x.at), Infinity);
+    state.ib = buildIB({ summary: summary.data, positions: positions.data, balances: balances.data, perf: perf.data, alloc: alloc.status === 'fulfilled' ? alloc.value.data : null, trades: trades.status === 'fulfilled' ? trades.value.data : null, updated: at });
+    state.source = 'ibkr'; store.set('rendement.source', 'ibkr');
+    const missing = [alloc.status !== 'fulfilled' && 'asset-class allocation', trades.status !== 'fulfilled' && 'trade history'].filter(Boolean);
+    ibStatus(missing.length ? `Connected, but IBKR did not return the ${missing.join(' and ')}. Those sections use what is available.` : null, 'warn');
+    render();
+  } catch (e) {
+    if (e && DENIALS.includes(e.code) && state.source === 'ibkr') { state.ib = null; state.source = state.model && store.get(KEY) ? 'import' : 'demo'; if (state.source === 'demo') loadData(makeDemo(), 'demo'); render(); }
+    ibStatus(ibErrorText(e), 'err');
+  } finally { IB.busy = false; $('ibBtn').disabled = false; }
+}
+$('ibBtn').addEventListener('click', ibConnect);
+
+(async function ibBoot() {
+  if (!window.claude || typeof window.claude.use !== 'function') return;
+  let mcp = null; try { mcp = await window.claude.use('mcp'); } catch (e) { }
+  if (!mcp) return;
+  IB.mcp = mcp;
+  try { const lt = await mcp.listTools(); const s = (lt.servers || []).find(x => /ibkr|interactive.?brokers/i.test(x.server)); if (s) IB.server = s.server; } catch (e) { }
+  $('ibBtn').hidden = false;
+  if (store.get('rendement.source') === 'ibkr') {
+    let st = 'prompt';
+    try { const perms = await window.claude.use('permissions'); if (perms) st = await perms.state('mcp:' + IB.server).catch(() => 'unavailable'); } catch (e) { }
+    if (st === 'granted') ibConnect();
+    else ibStatus('Choose <b>Connect IBKR</b> to load your live account again.');
+  }
+})();
+
 /* ---------- events ---------- */
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { state.tab = b.dataset.tab; try { history.replaceState(null, '', '#' + state.tab); } catch (e) { } render(); }));
-document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => { state.period = b.dataset.p; store.set('rendement.period', state.period); render(); }));
+$('periodSeg').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; state.period = b.dataset.p; store.set('rendement.period', state.period); render(); });
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { state.mode = b.dataset.mode; render(); }));
 $('importBtn').addEventListener('click', () => { const p = $('importPanel'); p.hidden = !p.hidden; $('importBtn').textContent = p.hidden ? 'Import your data' : 'Close import'; if (!p.hidden) $('csvInput').focus(); });
 const msg = (t, ok) => { const m = $('importMsg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); };
@@ -860,7 +1045,7 @@ $('csvFile').addEventListener('change', e => {
 $('applyCsv').addEventListener('click', () => {
   try {
     const text = $('csvInput').value, { data, errors } = parseCSV(text);
-    loadData(data, 'import'); store.set(KEY, text);
+    loadData(data, 'import'); store.set(KEY, text); store.set('rendement.source', 'import'); ibStatus(null);
     msg(`Imported ${data.txs.length} transactions` + (errors.length ? `. Skipped ${errors.length} row${errors.length === 1 ? '' : 's'}: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '…' : ''}` : '.'), true);
     render();
   } catch (err) { msg(err.message); }
@@ -871,7 +1056,7 @@ $('copyCsv').addEventListener('click', () => {
   const fallback = () => { ta.focus(); ta.select(); msg('Text selected. Press Ctrl+C or Cmd+C to copy.', true); };
   try { navigator.clipboard.writeText(ta.value).then(() => msg('Copied.', true), fallback); } catch (e) { fallback(); }
 });
-$('loadDemo').addEventListener('click', () => { store.del(KEY); loadData(makeDemo(), 'demo'); msg('Showing the example portfolio again.', true); render(); });
+$('loadDemo').addEventListener('click', () => { store.del(KEY); store.set('rendement.source', 'demo'); ibStatus(null); loadData(makeDemo(), 'demo'); msg('Showing the example portfolio again.', true); render(); });
 let raf = 0, lastW = 0;
 new ResizeObserver(() => { const w = document.querySelector('.wrap').clientWidth; if (w === lastW) return; lastW = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(render); }).observe(document.querySelector('.wrap'));
 
