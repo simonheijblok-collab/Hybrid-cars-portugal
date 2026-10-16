@@ -34,6 +34,20 @@ What IBKR provides and how it is used:
 - **Income**: the connector only reports a dividend total, not individual payments, so the monthly chart
   needs a CSV import.
 
+## DEGIRO
+
+Export **Transacties** (Transactions) and **Rekeningoverzicht** (Account statement) from DEGIRO as CSV,
+from the day the account was opened, and choose both files at once under **Import your data**.
+
+- Buys and sells come from Transactions, using DEGIRO's euro totals (AutoFX and transaction costs included).
+- Deposits and withdrawals come from the iDEAL, SEPA and flatex lines in the account statement. Internal
+  cash-sweep transfers, currency conversions and trade lines are skipped (they are already in Transactions).
+- Dividends are netted with their dividend tax and converted to euros at DEGIRO's own exchange rate.
+- Daily market prices: the page looks up each ISIN through the Interactive Brokers connector
+  (`search_contracts`, `get_price_history`), keeps a listing only when its prices match what you paid,
+  and converts US listings at each day's EUR/USD rate. Without the connector, values use your last trade prices.
+- The Return tile shows the time-weighted return and, next to it, the money-weighted return (Modified Dietz).
+
 ## Your own data
 
 Click **Import your data** and paste or choose a CSV:
