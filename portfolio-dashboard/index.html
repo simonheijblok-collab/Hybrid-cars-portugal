@@ -215,7 +215,7 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
       <button id="loadDemo" class="btn" type="button">Back to example</button>
       <span id="importMsg" class="msg" role="status"></span>
     </div>
-    <p class="foot">Your data stays in this browser. It is saved on this device only, so you can come back to it later.</p>
+    <p class="foot">A DEGIRO import is saved privately inside this artifact, so it shows on all your devices. Only you can read it, also if you share the page. Other imports stay in this browser only. "Back to example" removes your saved data.</p>
   </section>
 
   <div>
@@ -1228,7 +1228,8 @@ async function dgPriceFor(isin, m, fxAt) {
   return null;
 }
 async function dgFetchPrices() {
-  if (state.source !== 'degiro' || IB.busy) return;
+  while (IB.busy) await sleep(300);
+  if (state.source !== 'degiro') return;
   if (!IB.mcp) { ibStatus(IB.ready ? 'Values use your last trade prices. Open this page on claude.ai with Interactive Brokers connected to load daily market prices.' : 'Still starting the connection to claude.ai. Try again in a few seconds.', 'warn'); return; }
   IB.busy = true; $('ibBtn').disabled = true;
   const data = state.data, isins = Object.keys(data.meta).filter(isISIN);
@@ -1253,6 +1254,50 @@ async function dgFetchPrices() {
   } finally { IB.busy = false; $('ibBtn').disabled = false; }
 }
 
+/* ---------- your DEGIRO import, kept in this artifact's private store so it follows you across devices ---------- */
+const SYNC = { db: null }, CHUNK = 180000;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function ibGranted() {
+  try { const perms = await window.claude.use('permissions'); return perms ? (await perms.state('mcp:' + IB.server).catch(() => 'unavailable')) === 'granted' : false; } catch (e) { return false; }
+}
+async function syncSave(files, savedAt) {
+  if (!SYNC.db) return false;
+  try {
+    const parts = [];
+    files.forEach((f, fi) => { const n = Math.max(1, Math.ceil(f.text.length / CHUNK)); for (let k = 0; k < n; k++) parts.push({ fi, text: f.text.slice(k * CHUNK, (k + 1) * CHUNK) }); });
+    for (let i = 0; i < parts.length; i++) await SYNC.db.doc('degiro/part-' + i).set(parts[i]);
+    await SYNC.db.doc('degiro/import').set({ files: files.map(f => ({ name: f.name, kind: f.kind })), parts: parts.length, savedAt });
+    return true;
+  } catch (e) { return false; }
+}
+async function syncLoad() {
+  const snap = await SYNC.db.doc('degiro/import').get();
+  if (!snap.exists) return null;
+  const meta = snap.data(), files = (meta.files || []).map(f => ({ ...f, text: '' }));
+  for (let i = 0; i < (meta.parts || 0); i++) {
+    const p = (await SYNC.db.doc('degiro/part-' + i).get()).data();
+    if (!p || !files[p.fi]) return null;
+    files[p.fi].text += p.text;
+  }
+  return files.length ? { files, savedAt: meta.savedAt || 0 } : null;
+}
+async function syncDelete() { if (SYNC.db) { try { await SYNC.db.doc('degiro/import').delete(); } catch (e) { } } }
+(async function syncBoot() {
+  if (!window.claude || typeof window.claude.use !== 'function') return;
+  let db = null; try { db = await window.claude.use('db'); } catch (e) { }
+  if (!db) return;
+  SYNC.db = db;
+  try {
+    const remote = await syncLoad(), localAt = +store.get('rendement.degiro.savedAt') || 0;
+    if (!remote) { const local = store.get(KEY_DG); if (local) { const at = localAt || Date.now(); store.set('rendement.degiro.savedAt', at); syncSave(JSON.parse(local), at); } return; }
+    if (store.get(KEY_DG) && localAt >= remote.savedAt) return;
+    if (store.get(KEY) && store.get('rendement.source') === 'import' && localAt >= remote.savedAt) return;
+    dgLoad(remote.files); dgSaveFiles(remote.files); store.set('rendement.degiro.savedAt', remote.savedAt); store.set('rendement.source', 'degiro');
+    dgApplyCachedPrices(); state.view = state.ib ? 'all' : 'local'; render();
+    if (!state.dgPricesAt) { while (!IB.ready) await sleep(200); if (IB.mcp && await ibGranted()) dgFetchPrices(); else ibStatus('Your DEGIRO import is loaded. Choose <b>Update prices</b> to add daily market prices.'); }
+  } catch (e) { }
+})();
+
 /* ---------- events ---------- */
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { state.tab = b.dataset.tab; try { history.replaceState(null, '', '#' + state.tab); } catch (e) { } render(); }));
 $('acctSeg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; state.view = b.dataset.v; store.set('rendement.view', state.view); render(); });
@@ -1269,7 +1314,9 @@ $('csvFile').addEventListener('change', async e => {
   if (files.some(f => f.kind)) {
     try {
       const st = dgLoad(files.filter(f => f.kind));
-      dgSaveFiles(files.filter(f => f.kind)); store.del(KEY_DGP); store.set('rendement.source', 'degiro');
+      const dgFiles = files.filter(f => f.kind), at = Date.now();
+      dgSaveFiles(dgFiles); store.del(KEY_DGP); store.set('rendement.source', 'degiro'); store.set('rendement.degiro.savedAt', at);
+      syncSave(dgFiles, at).then(ok => { if (ok) msg($('importMsg').textContent + ' Saved privately, so it also shows on your other devices.', true); });
       const noAcc = !files.some(f => f.kind === 'account');
       msg(`Imported DEGIRO: ${st.trades} trades, ${st.flows} deposit and withdrawal lines, ${st.dividends} dividend payments.` + (noAcc ? ' Add Account.csv as well for deposits and dividends.' : ''), true);
       state.view = state.ib ? 'all' : 'local'; render(); dgFetchPrices();
@@ -1293,7 +1340,7 @@ $('copyCsv').addEventListener('click', () => {
   const fallback = () => { ta.focus(); ta.select(); msg('Text selected. Press Ctrl+C or Cmd+C to copy.', true); };
   try { navigator.clipboard.writeText(ta.value).then(() => msg('Copied.', true), fallback); } catch (e) { fallback(); }
 });
-$('loadDemo').addEventListener('click', () => { store.del(KEY); store.del(KEY_DG); store.del(KEY_DGP); store.set('rendement.source', 'demo'); ibStatus(null); loadData(makeDemo(), 'demo'); msg('Showing the example portfolio again.', true); render(); });
+$('loadDemo').addEventListener('click', () => { store.del(KEY); store.del(KEY_DG); store.del(KEY_DGP); store.del('rendement.degiro.savedAt'); syncDelete(); store.set('rendement.source', 'demo'); ibStatus(null); loadData(makeDemo(), 'demo'); msg('Showing the example portfolio again.', true); render(); });
 let raf = 0, lastW = 0;
 new ResizeObserver(() => { const w = document.querySelector('.wrap').clientWidth; if (w === lastW) return; lastW = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(render); }).observe(document.querySelector('.wrap'));
 
