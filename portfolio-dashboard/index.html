@@ -190,7 +190,7 @@ tfoot td { font-weight: 600; border-top: 1px solid var(--line); }
       <b>Rendement</b>
     </div>
     <span id="sourceChip" class="chip demo">Example portfolio</span>
-    <button id="ibBtn" class="btn" type="button" hidden>Connect IBKR</button>
+    <button id="ibBtn" class="btn" type="button">Connect IBKR</button>
     <button id="importBtn" class="btn primary" type="button">Import your data</button>
   </header>
   <div id="ibStatus" class="status" role="status" hidden></div>
@@ -892,7 +892,7 @@ function render() {
 }
 
 /* ---------- Interactive Brokers (live, through the viewer's claude.ai connector) ---------- */
-const IB = { mcp: null, server: 'Interactive_Brokers_IBKR', busy: false };
+const IB = { mcp: null, server: 'Interactive Brokers (IBKR)', busy: false, ready: false };
 const AC = { STK: 'Stocks', ETF: 'ETF', CRYPTO: 'Crypto', BOND: 'Bonds', BILL: 'Bonds', OPT: 'Options', FOP: 'Options', FUT: 'Futures', WAR: 'Warrants', FUND: 'Funds', CMDTY: 'Commodities', CASH: 'Cash' };
 const ibDate = s => String(s).slice(0, 4) + '-' + String(s).slice(4, 6) + '-' + String(s).slice(6, 8);
 const titleCase = s => String(s).toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\b(Inc|Corp|Ltd|Plc|Nv|Sa|Ag|Etf)\b/g, w => w.toUpperCase() === 'ETF' ? 'ETF' : w);
@@ -1004,7 +1004,13 @@ function renderRealizedIB(ib) {
 }
 
 async function ibConnect() {
-  if (IB.busy || !IB.mcp) return;
+  if (IB.busy) return;
+  if (!IB.mcp) {
+    ibStatus(IB.ready
+      ? 'Live connectors are not available in this view. Open the link on claude.ai in a web browser or the Claude desktop app to connect IBKR.'
+      : 'Still starting the connection to claude.ai. Try again in a few seconds.', IB.ready ? 'err' : '');
+    return;
+  }
   IB.busy = true; $('ibBtn').disabled = true;
   ibStatus('Loading your account from Interactive Brokers…');
   try {
@@ -1019,18 +1025,18 @@ async function ibConnect() {
     render();
   } catch (e) {
     if (e && DENIALS.includes(e.code) && state.source === 'ibkr') { state.ib = null; state.source = state.model && store.get(KEY) ? 'import' : 'demo'; if (state.source === 'demo') loadData(makeDemo(), 'demo'); render(); }
-    ibStatus(ibErrorText(e), 'err');
+    ibStatus(ibErrorText(e) + (e && e.code ? ` <span class="foot">(code: ${esc(e.code)})</span>` : ''), 'err');
   } finally { IB.busy = false; $('ibBtn').disabled = false; }
 }
 $('ibBtn').addEventListener('click', ibConnect);
 
 (async function ibBoot() {
-  if (!window.claude || typeof window.claude.use !== 'function') return;
+  if (!window.claude || typeof window.claude.use !== 'function') { IB.ready = true; return; }
   let mcp = null; try { mcp = await window.claude.use('mcp'); } catch (e) { }
+  IB.ready = true;
   if (!mcp) return;
   IB.mcp = mcp;
   try { const lt = await mcp.listTools(); const s = (lt.servers || []).find(x => /ibkr|interactive.?brokers/i.test(x.server)); if (s) IB.server = s.server; } catch (e) { }
-  $('ibBtn').hidden = false;
   if (store.get('rendement.source') === 'ibkr') {
     let st = 'prompt';
     try { const perms = await window.claude.use('permissions'); if (perms) st = await perms.state('mcp:' + IB.server).catch(() => 'unavailable'); } catch (e) { }
