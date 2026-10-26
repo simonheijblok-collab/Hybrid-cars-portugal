@@ -1,0 +1,554 @@
+<style>
+.dv { display: grid; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); }
+.dv h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.dv-take { color: var(--color-fg-muted); margin: var(--cds-gap-xs) 0 0; max-width: 72ch; }
+.dv-take b { font-weight: var(--cds-font-weight-medium); color: var(--color-fg); }
+.dv-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); }
+.dv-tabs button { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: var(--cds-pad-sm) var(--cds-pad-md); font: inherit; color: var(--color-fg-muted); cursor: pointer; }
+.dv-tabs button[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); }
+.dv-tabs button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.dv-page { display: grid; gap: var(--cds-gap-lg); }
+.dv-tiles { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+.dv-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.dv-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.dv-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; margin-top: var(--cds-gap-xs); }
+.dv-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); font-variant-numeric: tabular-nums; }
+.dv-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.dv-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: var(--cds-gap-xs) 0 var(--cds-gap-md); max-width: 80ch; }
+.dv-row { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-md); flex-wrap: wrap; }
+.dv-legend { display: flex; gap: var(--cds-gap-md); flex-wrap: wrap; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.dv-legend span { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+.dv-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.dv-chart { position: relative; min-height: 280px; }
+.dv-chart.short { min-height: 240px; }
+.dv-chart svg { display: block; overflow: visible; }
+.dv-tip { position: absolute; top: 0; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; font-variant-numeric: tabular-nums; }
+.dv-tip .t { color: var(--cds-text-secondary); }
+.dv-tip .r { display: flex; justify-content: space-between; gap: var(--cds-gap-md); }
+.dv-tip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.dv-wrap { overflow: auto; max-height: 30rem; }
+.dv-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+.dv-table th { position: sticky; top: 0; background: var(--color-panel); text-align: right; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.dv-table td { text-align: right; padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.dv-table th:first-child, .dv-table td:first-child, .dv-table .l { text-align: left; }
+.dv-table tr:last-child td { border-bottom: 0; }
+.dv-pill { display: inline-block; padding: 0 var(--cds-pad-xs); border-radius: 99px; font-size: var(--cds-font-size-caption); border: 1px solid currentColor; line-height: 1.5; }
+.dv-pill.paid { color: var(--color-ok); }
+.dv-pill.announced { color: var(--color-fg); }
+.dv-pill.forecast { color: var(--color-fg-muted); border-style: dashed; }
+.dv-seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
+.dv-seg button { appearance: none; border: 0; background: none; font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: var(--cds-radius); cursor: pointer; }
+.dv-seg button[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); }
+.dv-pos { color: var(--color-ok); }
+.dv-neg { color: var(--color-bad); }
+.dv-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.dv-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+[data-dash-source-state="refreshing"] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+[data-dash-source-state="empty"] { color: transparent; }
+</style>
+
+<div class="dv">
+  <header>
+    <h1 id="title">IBKR Dividend Tracker</h1>
+    <p class="dv-take" id="takeaway">
+      Over the next 12 months you can expect about
+      <b data-source="totals" data-field="forward_net" data-row="0" data-fmt="eur" data-fetchpriority="high">—</b>
+      in dividends after US withholding tax, about
+      <b data-source="totals" data-field="monthly_net" data-row="0" data-fmt="eur">—</b>
+      a month. The next payment is
+      <b data-source="totals" data-field="next_symbol" data-row="0" data-fmt="text">—</b>
+      on <b data-source="totals" data-field="next_pay_date" data-row="0" data-fmt="date">—</b>.
+    </p>
+  </header>
+
+  <nav class="dv-tabs" role="tablist" aria-label="View">
+    <button role="tab" id="tab-dividends" data-tab="dividends" aria-selected="true">Dividends</button>
+    <button role="tab" id="tab-portfolio" data-tab="portfolio" aria-selected="false">Portfolio</button>
+  </nav>
+
+  <section class="dv-page" id="dividends" role="tabpanel" aria-labelledby="tab-dividends">
+    <div class="dv-tiles">
+      <div class="dv-card" id="tile-forward">
+        <div class="dv-label">Forecast, next 12 months</div>
+        <div class="dv-big" data-source="totals" data-field="forward_net" data-row="0" data-fmt="eur" data-fetchpriority="high">—</div>
+        <div class="dv-sub">Gross <span data-source="totals" data-field="forward_gross" data-row="0" data-fmt="eur">—</span> before 15% US tax</div>
+      </div>
+      <div class="dv-card" id="tile-yield">
+        <div class="dv-label">Forward dividend yield</div>
+        <div class="dv-big" data-source="totals" data-field="forward_yield" data-row="0" data-fmt="pct">—</div>
+        <div class="dv-sub">Gross, on a portfolio value of <span data-source="totals" data-field="holdings_value" data-row="0" data-fmt="eur">—</span></div>
+      </div>
+      <div class="dv-card" id="tile-upcoming">
+        <div class="dv-label">Announced, not yet paid</div>
+        <div class="dv-big" data-source="totals" data-field="announced_net" data-row="0" data-fmt="eur">—</div>
+        <div class="dv-sub"><span data-source="totals" data-field="announced_count" data-row="0" data-fmt="int">—</span> payments, net of US tax</div>
+      </div>
+      <div class="dv-card" id="tile-received">
+        <div class="dv-label">Received in the last 12 months</div>
+        <div class="dv-big" data-source="totals" data-field="paid_net" data-row="0" data-fmt="eur">—</div>
+        <div class="dv-sub">IBKR reports <span data-source="summary" data-field="dividends" data-row="0" data-fmt="eur">—</span> in dividends on the account</div>
+      </div>
+    </div>
+
+    <div class="dv-card" id="card-monthly">
+      <div class="dv-row">
+        <div>
+          <h2>Dividends per month</h2>
+          <p class="dv-note">Net of 15% US tax. The past 12 months show what you were paid, then what is announced and what is forecast.</p>
+        </div>
+        <div class="dv-legend" id="legend-monthly"></div>
+      </div>
+      <div class="dv-chart" id="chart-monthly" data-source="monthly"></div>
+    </div>
+
+    <div class="dv-card" id="card-holdings">
+      <h2>Dividends by holding</h2>
+      <p class="dv-note">Forecast repeats each payment of the past 12 months a year later, scaled so its amount matches the latest payment, for the shares you hold now. Announced payments replace the forecast where they overlap.</p>
+      <div class="dv-wrap">
+        <table class="dv-table" id="table-holdings" data-source="by_holding" data-row-key="symbol">
+          <thead><tr>
+            <th data-field="symbol">Holding</th>
+            <th data-field="shares">Shares</th>
+            <th data-field="last_per_share">Latest per share</th>
+            <th data-field="payments_12m">Payments / yr</th>
+            <th data-field="next_pay_date">Next payment</th>
+            <th data-field="forward_net">Next 12 months</th>
+            <th data-field="yield_value">Yield</th>
+            <th data-field="yield_cost">Yield on cost</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="dv-card" id="card-calendar">
+      <div class="dv-row">
+        <div>
+          <h2>Dividend calendar</h2>
+          <p class="dv-note">Every payment for the holdings you own now. Paid uses the shares you held on the ex-date, worked out from your trades.</p>
+        </div>
+        <div class="dv-seg" id="cal-filter" aria-label="Show">
+          <button type="button" data-f="upcoming" aria-pressed="true">Upcoming</button>
+          <button type="button" data-f="paid" aria-pressed="false">Paid</button>
+          <button type="button" data-f="all" aria-pressed="false">All</button>
+        </div>
+      </div>
+      <div class="dv-wrap">
+        <table class="dv-table" id="table-calendar" data-source="calendar" data-row-key="key">
+          <thead><tr>
+            <th data-field="pay_date">Pay date</th>
+            <th data-field="symbol" class="l">Holding</th>
+            <th data-field="status" class="l">Status</th>
+            <th data-field="ex_date">Ex-date</th>
+            <th data-field="per_share">Per share</th>
+            <th data-field="shares">Shares</th>
+            <th data-field="gross_eur">Gross</th>
+            <th data-field="net_eur">Net</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="dv-page" id="portfolio" role="tabpanel" aria-labelledby="tab-portfolio" hidden></section>
+  <template id="tpl-portfolio">
+    <div class="dv-tiles">
+      <div class="dv-card" id="tile-nav">
+        <div class="dv-label">Net liquidation value</div>
+        <div class="dv-big" data-source="summary" data-field="net_liquidation" data-row="0" data-fmt="eur">—</div>
+        <div class="dv-sub">Cash <span data-source="summary" data-field="total_cash_value" data-row="0" data-fmt="eur">—</span></div>
+      </div>
+      <div class="dv-card" id="tile-return">
+        <div class="dv-label">Return since <span data-source="pf" data-field="since" data-row="0" data-fmt="date">—</span></div>
+        <div class="dv-big" data-source="pf" data-field="return" data-row="0" data-fmt="spct">—</div>
+        <div class="dv-sub">As IBKR reports it (<span data-source="pf" data-field="measure" data-row="0" data-fmt="text">—</span>)</div>
+      </div>
+      <div class="dv-card" id="tile-unrealized">
+        <div class="dv-label">Unrealized gain or loss</div>
+        <div class="dv-big" data-source="pf" data-field="unrealized" data-row="0" data-fmt="seur">—</div>
+        <div class="dv-sub">On <span data-source="pf" data-field="positions" data-row="0" data-fmt="int">—</span> open positions</div>
+      </div>
+    </div>
+    <div class="dv-card" id="card-nav">
+      <h2>Account value</h2>
+      <p class="dv-note">Daily net liquidation value from IBKR's performance history.</p>
+      <div class="dv-chart short" id="chart-nav" data-source="perf"></div>
+    </div>
+    <div class="dv-card" id="card-positions">
+      <h2>Open positions</h2>
+      <p class="dv-note">Values in your base currency at today's exchange rate; prices in the currency the stock trades in.</p>
+      <div class="dv-wrap">
+        <table class="dv-table" id="table-positions" data-source="by_holding" data-row-key="symbol">
+          <thead><tr>
+            <th data-field="symbol">Holding</th>
+            <th data-field="shares">Shares</th>
+            <th data-field="avg_price">Avg cost</th>
+            <th data-field="price">Price</th>
+            <th data-field="value_eur">Value</th>
+            <th data-field="unrealized_eur">Unrealized</th>
+            <th data-field="forward_gross">Dividends / yr</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+/* ---------- turning IBKR's answers into rows ---------- */
+const parse = (a) => (typeof a === 'string' ? JSON.parse(a) : a) || {};
+const isoDay = (s) => { s = String(s || ''); return /^\d{8}$/.test(s) ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s.slice(0, 10); };
+
+dash.loader('summary', {
+  description: 'The account summary as one row.',
+  fn: ({ answer }) => [parse(answer)],
+});
+dash.loader('positions', {
+  description: 'One row per open position.',
+  fn: ({ answer }) => parse(answer).positions || [],
+});
+dash.loader('balances', {
+  description: 'One row per currency, with its exchange rate to the base currency.',
+  fn: ({ answer }) => parse(answer).balances || [],
+});
+dash.loader('perf', {
+  description: "The longest daily series in IBKR's performance answer (1Y, else YTD) as rows of date, value and cumulative return.",
+  fn: ({ answer }) => {
+    const acct = Object.values(parse(answer).accounts || {})[0];
+    if (!acct) throw new Error('IBKR returned no performance data for this account.');
+    const p = acct.periods['1Y'] || acct.periods.YTD || Object.values(acct.periods).pop();
+    const data = p.dates.map((d, i) => ({ date: isoDay(d), nav: Number(p.nav[i]), cps: Number(p.cps[i]) }));
+    return { data, columns: ['date', 'nav', 'cps'], meta: [{ label: 'Return method', value: parse(answer).portfolio_measure || 'TWR' }, { label: 'Last updated by IBKR', value: String(acct.last_successful_update || '') }] };
+  },
+});
+dash.loader('trades', {
+  description: 'Trades this year plus the four completed quarters before, one row per trade, duplicates removed.',
+  fn: async ({ answer, call }) => {
+    const all = [...(parse(answer).trades || [])];
+    for (const period of ['LAST_QUARTER', 'TWO_QUARTERS_AGO', 'THREE_QUARTERS_AGO', 'FOUR_QUARTERS_AGO']) {
+      all.push(...(parse(await call('get_account_trades', { period })).trades || []));
+    }
+    const seen = new Set();
+    return all.filter((t) => !seen.has(t.trade_id) && seen.add(t.trade_id)).map((t) => ({
+      trade_id: t.trade_id, trade_date: isoDay(t.trade_time), symbol: t.symbol, sec_type: t.sec_type, side: t.side, size: Number(t.size), price: Number(t.price), currency: t.currency,
+    }));
+  },
+});
+dash.loader('dividends', {
+  description: "For each open position, its cash dividends over two years from IBKR's corporate actions: ex-date, pay date and amount per share.",
+  fn: async ({ answer, call }) => {
+    const rows = [];
+    for (const p of parse(answer).positions || []) {
+      const h = parse(await call('get_price_history', { contract_id: p.contract_id, security_type: 'STK', step: 'ONE_MONTH', period: 'TWO_YEARS', outside_rth: false, include_corporate_actions: true }));
+      for (const c of h.corp_actions || []) {
+        if (c.type !== 'CashDividends') continue;
+        rows.push({ key: `${p.contract_description} ${isoDay(c.date)}`, symbol: p.contract_description, ex_date: isoDay(c.date), pay_date: isoDay(c.payment_date || c.date), announce_date: isoDay(c.announce_date), per_share: Number(c.value), currency: c.currency });
+      }
+    }
+    return { data: rows, columns: ['key', 'symbol', 'ex_date', 'pay_date', 'announce_date', 'per_share', 'currency'] };
+  },
+});
+
+/* ---------- calculations ---------- */
+dash.calc('fx', {
+  inputs: ['balances', 'summary'],
+  title: 'Exchange rates',
+  description: 'Each currency’s rate to the base currency, from IBKR balances.',
+  fn: (balances, summary) => {
+    const base = (summary[0] || {}).currency || 'EUR';
+    return [{ currency: base, rate: 1 }, ...balances.filter((b) => b.currency !== 'BASE' && b.currency !== base && b.exchange_rate > 0).map((b) => ({ currency: b.currency, rate: b.exchange_rate }))];
+  },
+});
+
+dash.calc('paid_announced', {
+  inputs: ['dividends', 'positions', 'trades', 'fx'],
+  title: 'Paid and announced dividends',
+  description: 'Dividends with an ex-date in the past 12 months or later, times the shares you held on the ex-date (today’s position minus trades from that day on), in base currency; net assumes 15% US withholding tax.',
+  fn: (dividends, positions, trades, fx) => {
+    const today = new Date().toISOString().slice(0, 10), from = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
+    const rate = (c) => (fx.find((r) => r.currency === c) || { rate: 1 }).rate;
+    return dividends.filter((d) => d.ex_date > from).map((d) => {
+      const now = (positions.find((p) => p.contract_description === d.symbol) || { position: 0 }).position;
+      const later = trades.filter((t) => t.symbol === d.symbol && t.trade_date >= d.ex_date).reduce((s, t) => s + (t.side === 'BUY' ? t.size : -t.size), 0);
+      const shares = now - later, gross = shares * d.per_share * rate(d.currency);
+      return { key: d.key, symbol: d.symbol, ex_date: d.ex_date, pay_date: d.pay_date, per_share: d.per_share, currency: d.currency, shares, gross_eur: gross, net_eur: d.currency === 'USD' ? gross * 0.85 : gross, status: d.pay_date <= today ? 'Paid' : 'Announced' };
+    }).filter((r) => r.shares > 1e-6);
+  },
+});
+
+dash.calc('forecast', {
+  inputs: ['dividends', 'positions', 'fx'],
+  title: 'Dividend forecast',
+  description: 'Each payment of the past 12 months repeated a year later, scaled by the latest amount over the year’s median, for the shares you hold now; skipped where an announced payment falls within 10 days.',
+  fn: (dividends, positions, fx) => {
+    const day = 864e5, now = Date.now(), today = new Date(now).toISOString().slice(0, 10), until = new Date(now + 365 * day).toISOString().slice(0, 10);
+    const plusYear = (s) => `${Number(s.slice(0, 4)) + 1}${s.slice(4)}`;
+    const rate = (c) => (fx.find((r) => r.currency === c) || { rate: 1 }).rate;
+    const rows = [];
+    for (const p of positions) {
+      const ev = dividends.filter((d) => d.symbol === p.contract_description).sort((a, b) => (a.ex_date < b.ex_date ? -1 : 1));
+      if (!ev.length || !(p.position > 0)) continue;
+      const latest = ev[ev.length - 1], yearAgo = new Date(Date.parse(latest.ex_date) - 365 * day).toISOString().slice(0, 10);
+      const lastYear = ev.filter((d) => d.ex_date > yearAgo), amounts = lastYear.map((d) => d.per_share).sort((a, b) => a - b);
+      const factor = latest.per_share / amounts[Math.floor(amounts.length / 2)];
+      const announced = ev.filter((d) => d.pay_date > today);
+      for (const d of lastYear) {
+        const pay = plusYear(d.pay_date);
+        if (pay <= today || pay > until || announced.some((a) => Math.abs(Date.parse(a.pay_date) - Date.parse(pay)) <= 10 * day)) continue;
+        const per = d.per_share * factor, gross = p.position * per * rate(d.currency);
+        rows.push({ key: `${d.symbol} ${plusYear(d.ex_date)}`, symbol: d.symbol, ex_date: plusYear(d.ex_date), pay_date: pay, per_share: per, currency: d.currency, shares: p.position, gross_eur: gross, net_eur: d.currency === 'USD' ? gross * 0.85 : gross, status: 'Forecast' });
+      }
+    }
+    return rows;
+  },
+});
+
+dash.calc('calendar', {
+  inputs: ['paid_announced', 'forecast'],
+  title: 'Dividend calendar',
+  description: 'Paid, announced and forecast payments together, latest pay date first.',
+  fn: (paid_announced, forecast) => [...paid_announced, ...forecast].sort((a, b) => (a.pay_date < b.pay_date ? 1 : a.pay_date > b.pay_date ? -1 : 0)),
+});
+
+dash.calc('monthly', {
+  inputs: ['calendar'],
+  title: 'Dividends per month',
+  description: 'Net dividends per pay month, from 11 months ago to 12 months ahead, split into paid, announced and forecast.',
+  fn: (calendar) => {
+    const d = new Date(), months = [];
+    for (let i = -11; i <= 12; i++) { const m = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + i, 1)); months.push(m.toISOString().slice(0, 7)); }
+    return months.map((month) => {
+      const inMonth = calendar.filter((e) => e.pay_date.slice(0, 7) === month), sum = (s) => inMonth.filter((e) => e.status === s).reduce((t, e) => t + e.net_eur, 0);
+      return { month, paid: sum('Paid'), announced: sum('Announced'), forecast: sum('Forecast') };
+    });
+  },
+});
+
+dash.calc('by_holding', {
+  inputs: ['positions', 'fx', 'calendar', 'dividends'],
+  title: 'Dividends by holding',
+  description: 'Per open position: value and cost in base currency, the latest dividend, payments in the past year, the next pay date, the next 12 months (announced plus forecast) and the yield on value and on cost.',
+  fn: (positions, fx, calendar, dividends) => {
+    const today = new Date().toISOString().slice(0, 10), yearAgo = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
+    const rate = (c) => (fx.find((r) => r.currency === c) || { rate: 1 }).rate;
+    return positions.map((p) => {
+      const s = p.contract_description, k = rate(p.currency), value = p.market_value * k, cost = p.average_price * p.position * k;
+      const ahead = calendar.filter((e) => e.symbol === s && e.pay_date > today).sort((a, b) => (a.pay_date < b.pay_date ? -1 : 1));
+      const ev = dividends.filter((d) => d.symbol === s).sort((a, b) => (a.ex_date < b.ex_date ? -1 : 1));
+      const fg = ahead.reduce((t, e) => t + e.gross_eur, 0), fn = ahead.reduce((t, e) => t + e.net_eur, 0);
+      return {
+        symbol: s, shares: p.position, currency: p.currency, avg_price: p.average_price, price: p.market_price, value_eur: value, unrealized_eur: p.unrealized_pnl * k,
+        last_per_share: ev.length ? ev[ev.length - 1].per_share : null, payments_12m: ev.filter((d) => d.ex_date > yearAgo && d.ex_date <= today).length,
+        next_pay_date: ahead.length ? ahead[0].pay_date : null, forward_gross: fg, forward_net: fn,
+        yield_value: value > 0 ? fg / value : null, yield_cost: cost > 0 ? fg / cost : null,
+      };
+    }).sort((a, b) => b.forward_gross - a.forward_gross || b.value_eur - a.value_eur);
+  },
+});
+
+dash.calc('totals', {
+  inputs: ['calendar', 'by_holding'],
+  title: 'Dividend totals',
+  description: 'Sums over the calendar: the next 12 months (announced plus forecast), announced only, paid in the past 12 months; the forward yield on the value of your positions; the next payment.',
+  fn: (calendar, by_holding) => {
+    const today = new Date().toISOString().slice(0, 10), sum = (l, f) => l.reduce((t, e) => t + e[f], 0);
+    const ahead = calendar.filter((e) => e.pay_date > today), announced = ahead.filter((e) => e.status === 'Announced'), paid = calendar.filter((e) => e.status === 'Paid');
+    const next = ahead.slice().sort((a, b) => (a.pay_date < b.pay_date ? -1 : 1))[0], value = sum(by_holding, 'value_eur');
+    return [{
+      forward_gross: sum(ahead, 'gross_eur'), forward_net: sum(ahead, 'net_eur'), monthly_net: sum(ahead, 'net_eur') / 12,
+      announced_net: sum(announced, 'net_eur'), announced_count: announced.length, paid_net: sum(paid, 'net_eur'),
+      holdings_value: value, forward_yield: value > 0 ? sum(ahead, 'gross_eur') / value : null,
+      next_symbol: next ? next.symbol : null, next_pay_date: next ? next.pay_date : null, next_net: next ? next.net_eur : null,
+    }];
+  },
+});
+
+dash.calc('pf', {
+  inputs: ['perf', 'by_holding'],
+  title: 'Portfolio figures',
+  description: 'Return over IBKR’s longest performance series, its start date, and the unrealized result summed over open positions in base currency.',
+  fn: (perf, by_holding) => [{
+    since: perf.length ? perf[0].date : null, return: perf.length ? perf[perf.length - 1].cps : null, measure: 'time-weighted',
+    unrealized: by_holding.reduce((t, h) => t + h.unrealized_eur, 0), positions: by_holding.length,
+  }],
+});
+
+/* ---------- drawing ---------- */
+const base = () => { const s = dash.data('summary'); return (s.status === 'ok' && s.data[0] && s.data[0].currency) || 'EUR'; };
+const nf = (o) => new Intl.NumberFormat('nl-NL', o);
+const F = {
+  eur: (v) => nf({ style: 'currency', currency: base() }).format(v),
+  seur: (v) => (v > 0.004 ? '+' : v < -0.004 ? '−' : '') + nf({ style: 'currency', currency: base() }).format(Math.abs(v)),
+  pct: (v) => nf({ style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v),
+  spct: (v) => (v > 0.00005 ? '+' : v < -0.00005 ? '−' : '') + nf({ style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(v)),
+  int: (v) => nf({ maximumFractionDigits: 0 }).format(v),
+  qty: (v) => nf({ maximumFractionDigits: 4 }).format(v),
+  date: (v) => d3.utcFormat('%-d %b %Y')(new Date(v)),
+  text: (v) => String(v),
+  ccy: (v, c) => nf({ style: 'currency', currency: c || base(), minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(v),
+};
+const failLine = (el) => { el.replaceChildren(); const d = document.createElement('div'); d.className = 'dv-fail'; d.textContent = 'Failed to load'; el.appendChild(d); };
+
+function fillMarks(root) {
+  root.querySelectorAll('[data-fmt][data-source]').forEach((el) => {
+    const src = dash.data(el.dataset.source), row = src.status === 'ok' ? src.data[Number(el.dataset.row || 0)] : null;
+    const v = row ? row[el.dataset.field] : null;
+    el.classList.toggle('dash-skeleton', src.status === 'loading');
+    el.textContent = v == null || (typeof v === 'number' && !isFinite(v)) ? '—' : F[el.dataset.fmt](v);
+    el.classList.toggle('dv-pos', /^s/.test(el.dataset.fmt) && v > 0);
+    el.classList.toggle('dv-neg', /^s/.test(el.dataset.fmt) && v < 0);
+  });
+}
+
+let tab = 'dividends', calFilter = 'upcoming', portfolioReady = false;
+function showTab(t) {
+  tab = t;
+  document.querySelectorAll('.dv-tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.getElementById('dividends').hidden = t !== 'dividends';
+  const pf = document.getElementById('portfolio');
+  pf.hidden = t !== 'portfolio';
+  if (t === 'portfolio' && !portfolioReady) { pf.appendChild(document.getElementById('tpl-portfolio').content.cloneNode(true)); portfolioReady = true; }
+  dash.setLink(t);
+}
+document.querySelectorAll('.dv-tabs [data-tab]').forEach((b) => b.addEventListener('click', () => { showTab(b.dataset.tab); draw(); }));
+document.getElementById('cal-filter').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-f]'); if (!b) return;
+  calFilter = b.dataset.f;
+  document.querySelectorAll('#cal-filter [data-f]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  draw();
+});
+
+function tip(box, html, x) {
+  let t = box.querySelector('.dv-tip');
+  if (!t) { t = document.createElement('div'); t.className = 'dv-tip'; box.appendChild(t); }
+  if (html == null) { t.hidden = true; return; }
+  t.innerHTML = html; t.hidden = false;
+  const w = t.offsetWidth, bw = box.clientWidth;
+  t.style.left = Math.max(0, Math.min(bw - w, x > bw / 2 ? x - w - 12 : x + 12)) + 'px';
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function drawMonthly() {
+  const box = document.getElementById('chart-monthly'), src = dash.data('monthly');
+  const C = { paid: dash.colors[0], announced: dash.colors[1], forecast: dash.colors[0] };
+  document.getElementById('legend-monthly').innerHTML = `<span><i style="background:${C.paid}"></i>Paid</span><span><i style="background:${C.announced}"></i>Announced</span><span><i style="background:${C.forecast};opacity:.4"></i>Forecast</span>`;
+  if (src.status === 'error') return failLine(box);
+  if (src.status !== 'ok') { box.replaceChildren(); box.classList.toggle('dash-skeleton', src.status === 'loading'); return; }
+  box.classList.remove('dash-skeleton');
+  const rows = src.data, W = Math.max(280, box.clientWidth), H = 280, keys = ['paid', 'announced', 'forecast'];
+  const max = d3.max(rows, (r) => r.paid + r.announced + r.forecast) || 1;
+  const y = d3.scaleLinear([0, max], [H - 28, 12]).nice(4);
+  const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Dividends per month');
+  const ticks = y.ticks(4), probe = svg.append('text').attr('font-size', 11).text(F.eur(ticks[ticks.length - 1]));
+  box.replaceChildren(svg.node());
+  const left = Math.ceil(probe.node().getComputedTextLength()) + 10; probe.remove();
+  const x = d3.scaleBand(rows.map((r) => r.month), [left, W - 4]).padding(0.25);
+  svg.append('g').selectAll('line').data(ticks).join('line').attr('x1', left).attr('x2', W - 4).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').selectAll('text').data(ticks).join('text').attr('x', left - 8).attr('y', (v) => y(v) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((v) => F.eur(v));
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const every = Math.ceil(rows.length / Math.max(2, Math.floor(W / 64)));
+  svg.append('g').selectAll('text').data(rows.filter((r, i) => i % every === 0)).join('text').attr('x', (r) => x(r.month) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((r) => d3.utcFormat("%b '%y")(new Date(r.month + '-01')));
+  if (x(thisMonth) != null) svg.append('line').attr('x1', x(thisMonth) - x.step() * x.padding() / 2).attr('x2', x(thisMonth) - x.step() * x.padding() / 2).attr('y1', 8).attr('y2', H - 28).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '3 3');
+  const stack = d3.stack().keys(keys)(rows);
+  stack.forEach((layer) => {
+    svg.append('g').selectAll('rect').data(layer).join('rect')
+      .attr('x', (d) => x(d.data.month)).attr('width', x.bandwidth())
+      .attr('y', (d) => y(d[1])).attr('height', (d) => Math.max(0, y(d[0]) - y(d[1]) - (d[1] - d[0] > 0 ? 1 : 0)))
+      .attr('rx', 3).attr('fill', C[layer.key]).attr('fill-opacity', layer.key === 'forecast' ? 0.4 : 1);
+  });
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.month) - x.step() * x.padding() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 28).attr('fill', 'transparent')
+    .on('pointerenter pointermove', (ev, r) => {
+      const lines = keys.filter((k) => r[k] > 0).map((k) => `<div class="r"><span><i style="background:${C[k]};${k === 'forecast' ? 'opacity:.4' : ''}"></i>${k[0].toUpperCase() + k.slice(1)}</span><span>${F.eur(r[k])}</span></div>`).join('');
+      tip(box, `<div class="t">${d3.utcFormat('%B %Y')(new Date(r.month + '-01'))}</div>${lines || '<div>No dividends</div>'}`, (x(r.month) + x.bandwidth() / 2) / W * box.clientWidth);
+    })
+    .on('pointerleave', () => tip(box, null));
+}
+
+function drawNav() {
+  const box = document.getElementById('chart-nav'); if (!box) return;
+  const src = dash.data('perf');
+  if (src.status === 'error') return failLine(box);
+  if (src.status !== 'ok') { box.replaceChildren(); box.classList.toggle('dash-skeleton', src.status === 'loading'); return; }
+  box.classList.remove('dash-skeleton');
+  const rows = src.data.map((r) => ({ ...r, d: new Date(r.date) })), W = Math.max(280, box.clientWidth), H = 240;
+  const y = d3.scaleLinear([0, d3.max(rows, (r) => r.nav) || 1], [H - 28, 12]).nice(4), ticks = y.ticks(4);
+  const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Account value over time');
+  box.replaceChildren(svg.node());
+  const probe = svg.append('text').attr('font-size', 11).text(F.eur(ticks[ticks.length - 1])), left = Math.ceil(probe.node().getComputedTextLength()) + 10; probe.remove();
+  const x = d3.scaleUtc(d3.extent(rows, (r) => r.d), [left, W - 8]);
+  svg.append('g').selectAll('line').data(ticks).join('line').attr('x1', left).attr('x2', W - 8).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').selectAll('text').data(ticks).join('text').attr('x', left - 8).attr('y', (v) => y(v) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((v) => F.eur(v));
+  svg.append('g').selectAll('text').data(x.ticks(Math.max(2, Math.floor(W / 110)))).join('text').attr('x', (d) => x(d)).attr('y', H - 8).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((d) => d3.utcFormat('%-d %b')(d));
+  const id = 'navg', g = svg.append('defs').append('linearGradient').attr('id', id).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+  [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => g.append('stop').attr('offset', o).attr('style', `stop-color:${dash.colors[0]};stop-opacity:${a}`));
+  svg.append('path').datum(rows).attr('d', d3.area().x((r) => x(r.d)).y0(y(0)).y1((r) => y(r.nav))).attr('fill', `url(#${id})`);
+  svg.append('path').datum(rows).attr('d', d3.line().x((r) => x(r.d)).y((r) => y(r.nav))).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+  const last = rows[rows.length - 1];
+  svg.append('circle').attr('cx', x(last.d)).attr('cy', y(last.nav)).attr('r', 4).attr('fill', dash.colors[0]);
+  const dot = svg.append('circle').attr('r', 4.5).attr('fill', dash.colors[0]).attr('visibility', 'hidden');
+  const near = d3.bisector((r) => r.d).center;
+  svg.append('rect').attr('x', left).attr('y', 0).attr('width', W - 8 - left).attr('height', H - 28).attr('fill', 'transparent')
+    .on('pointermove', (ev) => {
+      const [mx] = d3.pointer(ev), r = rows[near(rows, x.invert(mx))];
+      dot.attr('visibility', 'visible').attr('cx', x(r.d)).attr('cy', y(r.nav));
+      tip(box, `<div class="t">${F.date(r.date)}</div><div>${F.eur(r.nav)}</div>`, x(r.d) / W * box.clientWidth);
+    })
+    .on('pointerleave', () => { dot.attr('visibility', 'hidden'); tip(box, null); });
+}
+
+function cell(text, cls) { const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; return td; }
+function tableState(table, src, cols) {
+  const body = table.querySelector('tbody');
+  if (src.status === 'ok') return body;
+  body.replaceChildren();
+  const tr = document.createElement('tr'), td = document.createElement('td'); td.colSpan = cols;
+  if (src.status === 'error') { const d = document.createElement('div'); d.className = 'dv-fail'; d.textContent = 'Failed to load'; td.appendChild(d); }
+  else td.className = src.status === 'loading' ? 'dash-skeleton' : '';
+  tr.appendChild(td); body.appendChild(tr);
+  return null;
+}
+function drawHoldings() {
+  const t = document.getElementById('table-holdings'), src = dash.data('by_holding'), body = tableState(t, src, 8); if (!body) return;
+  body.replaceChildren(...src.data.map((h) => {
+    const tr = document.createElement('tr');
+    tr.append(cell(h.symbol), cell(F.qty(h.shares)), cell(h.last_per_share == null ? '—' : F.ccy(h.last_per_share, h.currency)), cell(F.int(h.payments_12m)),
+      cell(h.next_pay_date ? F.date(h.next_pay_date) : '—'), cell(F.eur(h.forward_net)), cell(h.yield_value == null ? '—' : F.pct(h.yield_value)), cell(h.yield_cost == null ? '—' : F.pct(h.yield_cost)));
+    return tr;
+  }));
+}
+function drawCalendar() {
+  const t = document.getElementById('table-calendar'), src = dash.data('calendar'), body = tableState(t, src, 8); if (!body) return;
+  const today = new Date().toISOString().slice(0, 10);
+  let rows = src.data;
+  if (calFilter === 'upcoming') rows = rows.filter((e) => e.pay_date > today).slice().reverse();
+  else if (calFilter === 'paid') rows = rows.filter((e) => e.status === 'Paid');
+  if (!rows.length) { const tr = document.createElement('tr'), td = cell(calFilter === 'paid' ? 'No dividends paid on these holdings in the past 12 months yet.' : 'Nothing scheduled.', 'l'); td.colSpan = 8; tr.appendChild(td); body.replaceChildren(tr); return; }
+  body.replaceChildren(...rows.map((e) => {
+    const tr = document.createElement('tr'); tr.dataset.key = e.key;
+    const st = document.createElement('td'), pill = document.createElement('span'); st.className = 'l'; pill.className = 'dv-pill ' + e.status.toLowerCase(); pill.textContent = e.status; st.appendChild(pill);
+    tr.append(cell(F.date(e.pay_date)), cell(e.symbol, 'l'), st, cell(F.date(e.ex_date)), cell(F.ccy(e.per_share, e.currency)), cell(F.qty(e.shares)), cell(F.eur(e.gross_eur)), cell(F.eur(e.net_eur)));
+    return tr;
+  }));
+}
+function drawPositions() {
+  const t = document.getElementById('table-positions'); if (!t) return;
+  const src = dash.data('by_holding'), body = tableState(t, src, 7); if (!body) return;
+  body.replaceChildren(...src.data.map((h) => {
+    const tr = document.createElement('tr');
+    tr.append(cell(h.symbol), cell(F.qty(h.shares)), cell(F.ccy(h.avg_price, h.currency)), cell(F.ccy(h.price, h.currency)), cell(F.eur(h.value_eur)),
+      cell(F.seur(h.unrealized_eur), h.unrealized_eur > 0.004 ? 'dv-pos' : h.unrealized_eur < -0.004 ? 'dv-neg' : ''), cell(F.eur(h.forward_gross)));
+    return tr;
+  }));
+}
+
+function draw() {
+  fillMarks(document.querySelector('.dv'));
+  if (tab === 'dividends') { drawMonthly(); drawHoldings(); drawCalendar(); }
+  else { drawNav(); drawPositions(); }
+}
+const named = location.hash.slice(1);
+showTab(named === 'portfolio' ? 'portfolio' : 'dividends');
+dash.onData(draw);
+</script>
