@@ -1,0 +1,680 @@
+<title>Blacky’s Geheime Tweede Thuis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Fredoka:wght@500;700&display=swap">
+<style>
+/* Layout: a picture book on a desk. One comic page at a time (or all pages stacked), every page scales like a printed page. */
+:root{
+  --desk:#dfe7e3;        /* the table the book lies on */
+  --desk-ink:#24303a;
+  --paper:#fffaf0;       /* comic pages stay paper in both themes */
+  --ink:#1d1b22;
+  --caption:#ffe48a;
+  --blanket:#e2a5ad;     /* Blacky's pink blanket */
+  --eye:#a9cf3c;         /* Blacky's green eyes */
+  --btn:#1d1b22; --btn-ink:#fffaf0;
+  --f-display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --f-letter:"Comic Neue","Comic Sans MS","Chalkboard SE",sans-serif;
+  --f-sfx:"Bangers",Impact,"Arial Black",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--desk:#151829;--desk-ink:#e8e6f2;--btn:#fffaf0;--btn-ink:#1d1b22;color-scheme:dark}}
+:root[data-theme="dark"]{--desk:#151829;--desk-ink:#e8e6f2;--btn:#fffaf0;--btn-ink:#1d1b22;color-scheme:dark}
+body{background:var(--desk);color:var(--desk-ink);font-family:var(--f-letter);padding-inline:16px;padding-block:12px 96px}
+.top{max-width:760px;margin:0 auto 12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.top h2{font-family:var(--f-display);font-weight:700;font-size:1.05rem;margin:0;letter-spacing:.01em}
+.seg{display:flex;border:2px solid var(--desk-ink);border-radius:999px;overflow:hidden}
+.seg button{font:700 .85rem var(--f-display);border:0;background:transparent;color:var(--desk-ink);padding:.45em 1em;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--desk-ink);color:var(--desk)}
+.book{max-width:760px;margin:0 auto;display:grid;gap:28px}
+.page{container-type:inline-size;background:var(--paper);color:var(--ink);padding:3.2cqw;border-radius:4px;
+  box-shadow:0 1px 0 rgba(0,0,0,.08),0 14px 30px -12px rgba(0,0,0,.35);position:relative;
+  --fs:clamp(9.5px,2.35cqw,17px)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.8cqw}
+.panel{position:relative;margin:0;border:max(2px,.45cqw) solid var(--ink);background:#fff;overflow:hidden;max-width:100%}
+.panel.span2{grid-column:span 2}
+.panel>svg{display:block;width:100%;height:100%}
+.folio{display:flex;justify-content:space-between;align-items:baseline;margin-top:1.6cqw;font:700 calc(var(--fs)*.85) var(--f-display);color:#6c6878}
+.ptitle{font:700 calc(var(--fs)*1.35) var(--f-display);margin:0 0 1.4cqw;text-wrap:balance}
+/* lettering */
+.b{position:absolute;font:700 var(--fs)/1.22 var(--f-letter);color:var(--ink);background:#fff;border:max(1.5px,.32cqw) solid var(--ink);
+  border-radius:1.2em;padding:.45em .7em;text-align:center;z-index:2;text-wrap:balance}
+.b::after{content:"";position:absolute;width:.95em;height:.95em;background:inherit;border:inherit;border-radius:0;border-top:0;border-left:0}
+.b.bl::after{left:18%;bottom:-.55em;transform:rotate(45deg) skew(12deg,12deg)}
+.b.br::after{right:18%;bottom:-.55em;transform:rotate(45deg) skew(12deg,12deg)}
+.b.bc::after{left:calc(50% - .5em);bottom:-.55em;transform:rotate(45deg)}
+.b.tl::after{left:18%;top:-.55em;transform:rotate(225deg) skew(12deg,12deg)}
+.b.tr::after{right:18%;top:-.55em;transform:rotate(225deg) skew(12deg,12deg)}
+.b.none::after,.b.c::after,.b.x::after{display:none}
+.b.t{border-radius:50%/45%;padding:.9em 1em}
+.b.t::after{width:.8em;height:.8em;border-radius:50%;border:inherit;left:22%;bottom:-1.1em;transform:none}
+.b.t::before{content:"";position:absolute;width:.45em;height:.45em;border-radius:50%;background:#fff;border:inherit;left:14%;bottom:-1.85em}
+.b.t.tr2::after{left:auto;right:22%}.b.t.tr2::before{left:auto;right:14%}
+.b.c{background:var(--caption);border-radius:0;text-align:left;font-weight:700;padding:.4em .6em;box-shadow:.25em .25em 0 rgba(0,0,0,.18)}
+.b.loud{font-size:calc(var(--fs)*1.2);text-transform:uppercase;letter-spacing:.02em}
+.b.x{background:none;border:0;padding:0;font:400 calc(var(--fs)*2.3)/1 var(--f-sfx);letter-spacing:.04em;color:var(--sfx,#ff6a3d);
+  -webkit-text-stroke:max(1.5px,.3cqw) var(--ink);paint-order:stroke fill;transform:rotate(var(--r,-7deg));white-space:nowrap}
+.b.x.big{font-size:calc(var(--fs)*3.4)}
+.b.x.small{font-size:calc(var(--fs)*1.6)}
+/* cover */
+.cover .panel{border-width:max(3px,.7cqw)}
+.cover-title{position:absolute;inset:3.5% 5% auto;text-align:center;z-index:2}
+.cover-title h1{font:700 9.4cqw/0.98 var(--f-display);margin:0;color:#fff;letter-spacing:-.01em;text-wrap:balance;
+  -webkit-text-stroke:.55cqw var(--ink);paint-order:stroke fill;text-shadow:0 .9cqw 0 var(--ink)}
+.cover-title h1 span{color:var(--eye)}
+.cover-title p{font:700 2.8cqw/1.3 var(--f-letter);color:var(--ink);background:var(--paper);display:inline-block;margin:2.6cqw 0 0;padding:.35em .9em;border:.35cqw solid var(--ink);border-radius:999px;text-wrap:balance}
+.cover-foot{position:absolute;left:0;right:0;bottom:1.6%;text-align:center;font:700 2.6cqw var(--f-display);color:#fff;text-shadow:0 .25cqw 0 var(--ink);z-index:2}
+/* photos */
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:2cqw}
+.photos figure{margin:0;background:#fff;padding:1.2cqw 1.2cqw 0;border:max(1.5px,.3cqw) solid var(--ink);box-shadow:.5cqw .5cqw 0 rgba(0,0,0,.15)}
+.photos figure:nth-child(3n+1){transform:rotate(-1.4deg)}.photos figure:nth-child(3n){transform:rotate(1.2deg)}
+.photos img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#ddd}
+.photos figcaption{font:700 calc(var(--fs)*.9)/1.25 var(--f-letter);text-align:center;padding:.6em .2em .8em}
+.intro{font:400 calc(var(--fs)*1.1)/1.45 var(--f-letter);margin:0 0 2.2cqw;max-width:62ch}
+/* navigation */
+.nav{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:12px;align-items:center;
+  background:color-mix(in srgb,var(--desk) 88%,transparent);backdrop-filter:blur(6px);z-index:10}
+.nav button{font:700 1rem var(--f-display);background:var(--btn);color:var(--btn-ink);border:0;border-radius:999px;padding:.6em 1.3em;cursor:pointer;min-width:6.5em}
+.nav button:disabled{opacity:.35;cursor:default}
+.nav output{font:700 .95rem var(--f-display);min-width:7.5em;text-align:center;font-variant-numeric:tabular-nums}
+button:focus-visible{outline:3px solid var(--eye);outline-offset:2px}
+body.all .nav{display:none}
+@media (prefers-reduced-motion: no-preference){.page.turn{animation:turn .35s ease-out}@keyframes turn{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:none}}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+  <pattern id="pFloor" width="60" height="30" patternUnits="userSpaceOnUse"><rect width="60" height="30" fill="#e5d4b6"/><path d="M0,0 L30,15 L0,30 M30,15 L60,0 M30,15 L60,30" stroke="#d0bb98" stroke-width="2" fill="none"/></pattern>
+  <pattern id="pTweed" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#a3abc2"/><rect width="3.5" height="8" fill="#737e9c"/></pattern>
+  <pattern id="pWaffle" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#d9a5a6"/><circle cx="6" cy="6" r="4.4" fill="#ecc2c0"/></pattern>
+  <pattern id="pLeaves" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="#8db5a0"/>
+    <g fill="#eef3ea"><ellipse cx="10" cy="12" rx="7" ry="2.6" transform="rotate(-35 10 12)"/><ellipse cx="18" cy="8" rx="6" ry="2.4" transform="rotate(30 18 8)"/><ellipse cx="32" cy="30" rx="7" ry="2.6" transform="rotate(-50 32 30)"/><ellipse cx="38" cy="38" rx="6" ry="2.4" transform="rotate(20 38 38)"/><ellipse cx="8" cy="34" rx="5" ry="2.2" transform="rotate(60 8 34)"/></g></pattern>
+  <pattern id="pBoucle" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#d8ceba"/><circle cx="3" cy="3" r="2" fill="#c3b598"/><circle cx="8" cy="7" r="1.8" fill="#ece5d6"/><circle cx="7" cy="2" r="1.1" fill="#b2a585"/></pattern>
+  <pattern id="pTeal" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#93bdb8"/><path d="M1,4 q3,-3 5,0 M6,10 q3,-3 5,0" stroke="#b9d8d3" stroke-width="2" fill="none"/></pattern>
+  <pattern id="pBrick" width="40" height="16" patternUnits="userSpaceOnUse"><rect width="40" height="16" fill="#dcc3ae"/><rect x="1" y="1" width="38" height="6.5" fill="#b56a4c"/><rect x="-19" y="9" width="38" height="6" fill="#a95f43"/><rect x="21" y="9" width="38" height="6" fill="#b56a4c"/></pattern>
+  <pattern id="pBrickN" width="40" height="16" patternUnits="userSpaceOnUse"><rect width="40" height="16" fill="#4b4258"/><rect x="1" y="1" width="38" height="6.5" fill="#5e4757"/><rect x="-19" y="9" width="38" height="6" fill="#57414f"/><rect x="21" y="9" width="38" height="6" fill="#5e4757"/></pattern>
+  <pattern id="pPlank" width="26" height="200" patternUnits="userSpaceOnUse"><rect width="26" height="200" fill="#b89a79"/><rect width="2" height="200" fill="#8e7258"/><ellipse cx="13" cy="70" rx="2.5" ry="4" fill="#94775c"/></pattern>
+  <pattern id="pGrass" width="22" height="18" patternUnits="userSpaceOnUse"><rect width="22" height="18" fill="#76b84c"/><path d="M3,18 L5,9 M9,18 L8,8 M15,18 L17,10 M19,18 L20,11" stroke="#5c9d37" stroke-width="2"/></pattern>
+  <pattern id="pTiles" width="60" height="30" patternUnits="userSpaceOnUse"><rect width="60" height="30" fill="#cdc6ba"/><path d="M0,0 H60 M0,0 V30" stroke="#b5ad9f" stroke-width="2"/></pattern>
+  <pattern id="pWood" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#cf9f66"/><path d="M0,40 L40,0 M-10,10 L10,-10 M30,50 L50,30" stroke="#bd8c55" stroke-width="3"/></pattern>
+  <pattern id="pPitch" width="60" height="10" patternUnits="userSpaceOnUse"><rect width="30" height="10" fill="#43c04a"/><rect x="30" width="30" height="10" fill="#3aaf41"/></pattern>
+  <linearGradient id="gDay" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd3f2"/><stop offset="1" stop-color="#e9f6fb"/></linearGradient>
+  <linearGradient id="gDawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc3ef"/><stop offset=".55" stop-color="#ffd9a8"/><stop offset="1" stop-color="#ffc59a"/></linearGradient>
+  <linearGradient id="gNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141a46"/><stop offset="1" stop-color="#3a3c7c"/></linearGradient>
+  <linearGradient id="gRain" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f8ea0"/><stop offset="1" stop-color="#b8c2cc"/></linearGradient>
+  <radialGradient id="gGlow"><stop offset="0" stop-color="#ffe9a6" stop-opacity=".95"/><stop offset="1" stop-color="#ffe9a6" stop-opacity="0"/></radialGradient>
+  <radialGradient id="gOven"><stop offset="0" stop-color="#ffd27a"/><stop offset=".6" stop-color="#d9772e"/><stop offset="1" stop-color="#3a2618"/></radialGradient>
+  <radialGradient id="gWarm"><stop offset="0" stop-color="#fff3d1"/><stop offset="1" stop-color="#f2dcb4"/></radialGradient>
+</defs>
+</svg>
+
+<header class="top">
+  <h2>Blacky’s Geheime Tweede Thuis</h2>
+  <div class="seg" role="group" aria-label="Leesweergave">
+    <button type="button" id="modeBook" aria-pressed="true">Eén pagina</button>
+    <button type="button" id="modeAll" aria-pressed="false">Alle pagina’s</button>
+  </div>
+</header>
+<main class="book" id="book"></main>
+<nav class="nav" aria-label="Bladzijde omslaan">
+  <button type="button" id="prev">◀ Terug</button>
+  <output id="pos" aria-live="polite">Omslag</output>
+  <button type="button" id="next">Verder ▶</button>
+</nav>
+
+<script>
+/* ================= drawing kit ================= */
+const F='#16151c',F2='#30303f',EYE='#b8dd4c',PATCH='#fbf8f1',SKIN='#f2c6a6',INK='#1d1b22';
+const R=(x,y,w,h,f,ex='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${ex}/>`;
+const P=(d,f,ex='')=>`<path d="${d}" fill="${f}" ${ex}/>`;
+const L=(d,c,w,ex='')=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${ex}/>`;
+const C=(x,y,r,f,ex='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${ex}/>`;
+const E=(x,y,rx,ry,f,ex='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}" ${ex}/>`;
+const T=(x,y,s,t,f='#fff',ex='')=>`<text x="${x}" y="${y}" font-size="${s}" fill="${f}" font-family="Bangers, Impact, sans-serif" text-anchor="middle" stroke="${INK}" stroke-width="${s/14}" paint-order="stroke" letter-spacing="1" ${ex}>${t}</text>`;
+const G=(x,y,s,b,r=0,flip=false)=>`<g transform="translate(${x} ${y}) rotate(${r}) scale(${flip?-s:s} ${s})">${b}</g>`;
+
+/* ---- Blacky ---- */
+function catEyes(e){
+  const eye=x=>E(x,-4,9.5,11,EYE)+E(x,-4,2.6,8.5,'#0a0a0d')+C(x+3.5,-9,2.6,'#fff');
+  const wide=x=>E(x,-4,12,13.5,EYE)+C(x,-3,7,'#0a0a0d')+C(x+3.5,-8,3.4,'#fff')+C(x-3,1,1.5,'#fff');
+  const arc=d=>L(d,'#a3a2bb',3.4);
+  switch(e){
+    case 'closed': return arc('M-26,-3 Q-17,4 -8,-3')+arc('M8,-3 Q17,4 26,-3');
+    case 'happy': return arc('M-26,1 Q-17,-10 -8,1')+arc('M8,1 Q17,-10 26,1');
+    case 'wide': return wide(-17)+wide(17);
+    case 'sad': return wide(-17)+wide(17)+arc('M-30,-19 L-10,-25')+arc('M30,-19 L10,-25');
+    case 'half': return eye(-17)+eye(17)+P('M-30,-18 H-5 V-4 Q-17,-1 -30,-4Z M5,-18 H30 V-4 Q17,-1 5,-4Z',F)+arc('M-28,-4 Q-17,-1 -6,-4')+arc('M6,-4 Q17,-1 28,-4');
+    default: return eye(-17)+eye(17);
+  }
+}
+function catHead(o={}){
+  const flat=o.ears==='flat';
+  let s = flat
+    ? P('M-44,-6 L-68,-40 L-18,-36Z',F)+P('M44,-6 L68,-40 L18,-36Z',F)+P('M-40,-12 L-58,-35 L-24,-33Z','#c98a96')+P('M40,-12 L58,-35 L24,-33Z','#c98a96')
+    : P('M-42,-14 L-38,-70 L-8,-40Z',F)+P('M42,-14 L38,-70 L8,-40Z',F)+P('M-35,-24 L-33,-58 L-15,-40Z','#c98a96')+P('M35,-24 L33,-58 L15,-40Z','#c98a96');
+  s+=P('M-46,4 C-48,-32 -26,-46 0,-46 C26,-46 48,-32 46,4 C44,30 22,40 0,40 C-22,40 -44,30 -46,4Z',F);
+  s+=L('M-34,-26 Q-20,-40 0,-41',F2,4);
+  s+=catEyes(o.eyes||'open');
+  if(o.blush) s+=E(-30,13,8,4.5,'#e58a9a','opacity=".5"')+E(30,13,8,4.5,'#e58a9a','opacity=".5"');
+  const m=o.mouth||'smile';
+  if(m==='open') s+=E(0,22,6.5,8,'#5a2533')+E(0,26,4.5,3.2,'#e58a9a');
+  else if(m==='yawn') s+=E(0,24,12,14,'#5a2533')+E(0,31,8,5,'#e58a9a')+P('M-8,12 L-5,19 L-2,12Z','#fff')+P('M8,12 L5,19 L2,12Z','#fff');
+  else if(m==='flat') s+=L('M-7,19 H7','#8e8ca6',2.4);
+  else if(m==='frown') s+=L('M-9,23 Q0,15 9,23','#8e8ca6',2.4);
+  else s+=L('M0,14 Q-5,21 -11,17 M0,14 Q5,21 11,17','#8e8ca6',2.4);
+  s+=P('M-5,8 L5,8 L0,14Z','#6e4f5c');
+  s+=L('M-16,12 L-60,4 M-16,16 L-60,18 M-16,20 L-56,30 M16,12 L60,4 M16,16 L60,18 M16,20 L56,30','#c4c2d6',1.6,'opacity=".9"');
+  if(o.tear) s+=P('M-26,10 Q-31,21 -26,25 Q-21,21 -26,10Z','#7cc4f2');
+  return s;
+}
+const patch=(x,y,s)=>G(x,y,s,P('M-12,-10 C-6,-3 6,-3 12,-10 C10,2 5,10 0,14 C-5,10 -10,2 -12,-10Z',PATCH));
+const shadow=(x,y,rx)=>E(x,y,rx,rx*.12,'#000','opacity=".14"');
+function cat(pose='sit',o={}){
+  const H=catHead(o); const leg=(d)=>L(d,F,13);
+  switch(pose){
+  case 'sit': return shadow(0,2,62)+
+    (o.tailDown?L('M30,-8 C64,-2 90,0 108,2',F,15):L('M30,-8 C78,-6 92,-44 70,-82',F,15))+
+    P('M-46,0 C-58,-50 -38,-98 0,-100 C38,-98 58,-50 46,0Z',F)+L('M-38,-22 C-46,-52 -32,-74 -16,-78',F2,4)+L('M0,-56 L0,-8',F2,3)+
+    E(-17,-4,15,7.5,F,`stroke="${F2}" stroke-width="2"`)+E(17,-4,15,7.5,F,`stroke="${F2}" stroke-width="2"`)+
+    patch(0,-80,1.1)+G(0,-122,1,H);
+  case 'walk': {
+    const run=o.run;
+    return shadow(0,2,70)+
+    (o.tailDown?L('M-52,-50 C-80,-40 -95,-20 -102,-8',F,13):L('M-52,-58 C-88,-62 -98,-104 -80,-126',F,13))+
+    (run? leg('M-36,-48 L-84,-30')+leg('M-26,-44 L-62,-12')+leg('M30,-50 L80,-40')+leg('M40,-46 L90,-60')
+        : leg('M-38,-44 L-46,-4')+leg('M-22,-44 L-16,-4')+leg('M26,-44 L20,-4')+leg('M40,-44 L48,-4'))+
+    E(-2,-54,58,26,F)+L('M-40,-72 Q0,-84 36,-74',F2,4)+patch(44,-60,.7)+G(56,-90,.78,H);
+  }
+  case 'loaf': return shadow(0,2,74)+L('M52,-12 C86,-10 98,-26 86,-44',F,12)+E(0,-32,68,32,F)+L('M-50,-46 Q-30,-62 0,-64',F2,4)+
+    E(-17,-4,14,7,F,`stroke="${F2}" stroke-width="2"`)+E(17,-4,14,7,F,`stroke="${F2}" stroke-width="2"`)+patch(0,-50,.85)+G(0,-80,.9,H);
+  case 'curl': return shadow(0,2,72)+E(0,-34,68,34,F)+L('M-10,-64 Q34,-70 58,-44',F2,5)+
+    (o.toy?G(-62,-6,.75,muis()):'')+L('M62,-18 C46,8 -36,10 -60,-6',F,13)+G(-30,-44,.72,catHead({eyes:'closed',...o}),-14);
+  case 'stretch': return shadow(0,2,140)+L('M-86,-24 C-118,-32 -134,-18 -156,-28',F,11)+
+    L('M-66,-16 L-128,-8',F,12)+L('M-58,-10 L-118,2',F,12)+L('M66,-18 L134,-14',F,12)+L('M58,-10 L128,0',F,12)+
+    E(0,-24,92,22,F)+L('M-60,-40 Q0,-50 60,-42',F2,4)+G(96,-38,.62,H,8);
+  case 'belly': return shadow(0,2,90)+L('M66,-22 C92,-18 104,-4 122,-10',F,12)+
+    L('M-44,-40 L-58,-86',F,12)+L('M-24,-44 L-26,-90',F,12)+L('M30,-44 L40,-88',F,12)+L('M48,-40 L72,-74',F,12)+
+    E(0,-28,68,26,F)+patch(32,-36,1.1)+patch(-18,-28,.55)+G(-84,-30,.66,H,-80);
+  }
+}
+/* Mr. Muis, the soft toy mouse */
+const muis=()=>L('M30,0 C50,4 58,-10 72,-4','#9c958c',5)+E(0,-14,34,18,'#b5ada3')+C(-30,-22,16,'#b5ada3')+C(-36,-38,9,'#a39b91')+C(-22,-38,9,'#a39b91')+
+  C(-36,-38,5,'#d9b8bc')+C(-22,-38,5,'#d9b8bc')+C(-36,-23,2.2,'#2b2b2b')+C(-26,-23,2.2,'#2b2b2b')+C(-46,-18,3,'#7a6d6d')+E(14,-6,8,5,'#a39b91');
+const fishToy=()=>P('M-34,0 C-20,-20 20,-20 30,0 C20,20 -20,20 -34,0Z','#f39a3d')+P('M28,0 L50,-16 L50,16Z','#f39a3d')+C(-18,-4,3.5,INK)+L('M-4,-10 Q4,0 -4,10 M8,-10 Q16,0 8,10','#d1782a',3);
+
+/* ---- the humans: Beardy and Huggy ---- */
+function human(type,o={}){
+  const B=type==='beardy';
+  const shirt=B?'#4e9c86':'#e7a6bb', pants='#3e5f92', shoe=B?'#3b3b45':'#f4cfda', hair=B?'#4a3426':'#5b3b29';
+  const arm=(d,hx,hy)=>L(d,shirt,17)+C(hx,hy,10,SKIN);
+  const up=o.sit?70:0;
+  let s='';
+  // legs
+  if(o.sit) s+=L('M-18,-46 C-30,-40 -36,-34 -34,-8',pants,24)+L('M18,-46 C30,-40 36,-34 34,-8',pants,24)+E(-38,-6,18,8,shoe)+E(38,-6,18,8,shoe);
+  else s+=L('M-18,-120 L-24,-10 M18,-120 L24,-10',pants,24)+E(-28,-6,18,8,shoe)+E(28,-6,18,8,shoe);
+  let b='';
+  if(!B) b+=P('M-36,-262 C-44,-306 44,-306 36,-262 C44,-232 44,-200 36,-186 L-36,-186 C-44,-200 -44,-232 -36,-262Z',hair);
+  b+=P('M-42,-206 C-50,-170 -44,-130 -38,-110 L38,-110 C44,-130 50,-170 42,-206 C30,-220 -30,-220 -42,-206Z',shirt);
+  if(B) b+=L('M-14,-213 L0,-198 L14,-213','#3f8370',5);
+  if(o.holding) b+=o.holding;
+  const a=o.arms||'down';
+  const dl=arm('M-40,-198 C-56,-170 -58,-142 -54,-122',-54,-118), dr=arm('M40,-198 C56,-170 58,-142 54,-122',54,-118);
+  if(a==='down') b+=dl+dr;
+  else if(a==='wave') b+=dl+arm('M40,-198 C62,-212 70,-240 66,-262',66,-266);
+  else if(a==='point') b+=dl+arm('M40,-196 C66,-196 86,-200 100,-206',104,-208);
+  else if(a==='pointL') b+=arm('M-40,-196 C-66,-196 -86,-200 -100,-206',-104,-208)+dr;
+  else if(a==='cheer') b+=arm('M-40,-198 C-62,-214 -70,-244 -66,-270',-66,-274)+arm('M40,-198 C62,-214 70,-244 66,-270',66,-274);
+  else if(a==='hug') b+=arm('M-40,-198 C-48,-160 -10,-140 30,-150',34,-150)+arm('M40,-198 C64,-186 72,-160 58,-142',54,-138);
+  else if(a==='pet') b+=dl+arm('M40,-196 C66,-180 52,-166 26,-168',22,-168);
+  else if(a==='hold') b+=arm('M-40,-196 C-50,-170 -40,-156 -24,-156',-22,-156)+arm('M40,-196 C50,-170 40,-156 24,-156',22,-156);
+  else if(a==='open') b+=arm('M-40,-198 C-70,-196 -92,-188 -106,-176',-110,-174)+arm('M40,-198 C70,-196 92,-188 106,-176',110,-174);
+  if(o.front) b+=o.front;
+  b+=R(-9,-228,18,18,SKIN)+C(-32,-254,6,SKIN)+C(32,-254,6,SKIN)+C(0,-256,32,SKIN);
+  const ex=o.face||'smile';
+  if(ex==='closed'||ex==='laugh') b+=L('M-19,-256 Q-13,-262 -7,-256 M7,-256 Q13,-262 19,-256',INK,2.6);
+  else b+=C(-13,-258,3.3,INK)+C(13,-258,3.3,INK);
+  if(ex==='sad') b+=L('M-21,-270 L-7,-273 M21,-270 L7,-273',INK,2.4);
+  if(!B) b+=E(-21,-244,6,3.5,'#ef9aa8','opacity=".55"')+E(21,-244,6,3.5,'#ef9aa8','opacity=".55"');
+  b+= B ? `<g fill="none" stroke="#1c1c22" stroke-width="3.5"><rect x="-26" y="-266" width="21" height="15" rx="3"/><rect x="5" y="-266" width="21" height="15" rx="3"/><path d="M-5,-260 h10 M-26,-260 h-6 M26,-260 h6"/></g>`
+        : `<g fill="none" stroke="#a32b3e" stroke-width="3"><ellipse cx="-14" cy="-258" rx="11" ry="8.5"/><ellipse cx="14" cy="-258" rx="11" ry="8.5"/><path d="M-3,-259 h6"/></g>`;
+  if(B){
+    b+=P('M-33,-258 C-38,-296 30,-300 34,-262 C28,-280 4,-288 -16,-280 C-24,-276 -30,-268 -33,-258Z',hair);
+    b+=P('M-30,-252 C-32,-214 32,-214 30,-252 C26,-234 16,-230 0,-230 C-16,-230 -26,-234 -30,-252Z','#b58e69');
+    b+=P('M-13,-243 Q0,-250 13,-243 Q0,-239 -13,-243Z','#9c774f');
+  } else b+=P('M-33,-258 C-36,-292 34,-296 34,-262 C20,-282 -14,-284 -33,-258Z',hair);
+  const my=B?-235:-241;
+  if(ex==='open'||ex==='laugh') b+=E(0,my+1,7,6,'#7a2e3a');
+  else if(ex==='sad') b+=L(`M-8,${my+3} Q0,${my-3} 8,${my+3}`,INK,2.6);
+  else if(ex==='surprised') b+=E(0,my,4,5,'#7a2e3a');
+  else b+=L(`M-9,${my-1} Q0,${my+6} 9,${my-1}`,INK,2.6);
+  s+=up?G(0,up,1,b):b;
+  return s;
+}
+
+/* ---- props & places ---- */
+function room(W,H,wall='#f1e7d8',fy=.76){const y=H*fy;return R(0,0,W,H,wall)+R(0,y,W,H-y,'url(#pFloor)')+R(0,y-7,W,7,'#fbf8f1');}
+function windowBox(x,y,w,h,o={}){
+  const glass=o.night?'url(#gNight)':(o.rain?'url(#gRain)':'url(#gDay)');
+  let s=R(x-8,y-8,w+16,h+16,'#f7f4ee')+R(x,y,w,h,glass);
+  if(o.night){s+=C(x+w*.72,y+h*.3,Math.min(w,h)*.12,'#fff5c8');s+=C(x+w*.25,y+h*.2,2,'#fff')+C(x+w*.45,y+h*.55,1.6,'#fff');}
+  if(o.blinds) for(let i=1;i<h/12;i++) s+=L(`M${x},${y+i*12} H${x+w}`,'#e7e4dc',3);
+  s+=L(`M${x+w/2},${y} V${y+h} M${x},${y+h/2} H${x+w}`,'#f7f4ee',6);
+  if(o.curtain) s+=P(`M${x-26},${y-14} h34 c-6,${h*.4} 6,${h*.7} 0,${h+30} h-34Z`,'#d9cbb5')+P(`M${x+w+26},${y-14} h-34 c6,${h*.4} -6,${h*.7} 0,${h+30} h34Z`,'#d9cbb5');
+  return s;
+}
+function lamp(x,y,h){return E(x,y-h*.55,70,h*.6,'url(#gGlow)')+R(x-3,y-h,6,h,'#fff6d8')+R(x-12,y-4,24,5,'#3a3a3a');}
+function plant(x,y,s=1){return G(x,y,s,P('M-22,0 L-26,-46 H26 L22,0Z','#cfd2cb')+L('M-24,-30 H24','#b9bcb5',2)+
+  P('M0,-46 C-30,-70 -40,-110 -30,-130 C-12,-100 -6,-80 0,-46Z','#3d8a4d')+P('M0,-46 C26,-70 40,-104 30,-124 C12,-96 6,-80 0,-46Z','#4a9a58')+
+  P('M0,-46 C-6,-90 2,-130 10,-150 C16,-110 10,-80 0,-46Z','#357a43')+E(6,-150,6,12,'#f7f6ef')+P('M0,-46 C-40,-50 -60,-70 -66,-84 C-36,-78 -16,-66 0,-46Z','#418f50'));}
+function cabinet(x,y,w,h){return R(x,y-h,w,h,'url(#pWood)')+L(`M${x+w/3},${y-h} V${y} M${x+2*w/3},${y-h} V${y}`,'#a8763f',3)+R(x,y-h,w,6,'#b98547');}
+function tv(x,y,w,h,mode='football'){
+  let scr='';
+  const sx=x+6,sy=y+6,sw=w-12,sh=h-12;
+  if(mode==='football') scr=R(sx,sy,sw,sh,'url(#pPitch)')+L(`M${sx+sw/2},${sy} V${sy+sh}`,'#e8ffe8',2)+C(sx+sw/2,sy+sh/2,sh*.18,'none','stroke="#e8ffe8" stroke-width="2"')+
+     G(sx+sw*.35,sy+sh*.8,sh/220,P('M-8,-40 h16 v26 h-16Z','#e23b3b')+C(0,-50,8,SKIN)+L('M-5,-14 V0 M5,-14 V0',INK,5))+
+     G(sx+sw*.66,sy+sh*.75,sh/220,P('M-8,-40 h16 v26 h-16Z','#2f62c9')+C(0,-50,8,SKIN)+L('M-5,-14 V0 M5,-14 V0',INK,5))+C(sx+sw*.5,sy+sh*.72,sh*.04,'#fff')+
+     R(sx+6,sy+6,sw*.36,sh*.14,'#1d1b22')+`<text x="${sx+8+sw*.18}" y="${sy+5+sh*.12}" font-size="${sh*.1}" fill="#fff" font-family="Bangers, Impact, sans-serif" text-anchor="middle">FEY 1-0 AZ</text>`;
+  else if(mode==='cartoon') scr=R(sx,sy,sw,sh,'#7fd0f0')+C(sx+sw*.3,sy+sh*.5,sh*.22,'#ffd43b')+C(sx+sw*.65,sy+sh*.55,sh*.18,'#ff7aa8');
+  else scr=R(sx,sy,sw,sh,'#20232c')+L(`M${sx+sw*.1},${sy+sh*.2} L${sx+sw*.4},${sy+sh*.1}`,'#3a3e4c',4);
+  return R(x,y,w,h,'#111','rx="4"')+scr+R(x+w/2-30,y+h,60,8,'#222')+R(x+w/2-6,y+h-2,12,10,'#222');
+}
+function sofaBack(x,y,w,h=200){return R(x-14,y-h*.62,48,h*.62,'url(#pTweed)','rx="18"')+R(x+w-34,y-h*.62,48,h*.62,'url(#pTweed)','rx="18"')+R(x,y-h,w,h*.62,'url(#pTweed)','rx="26"')+L(`M${x+22},${y-h+14} H${x+w-22}`,'#c4cbe0',3,'opacity=".6"');}
+function sofaFront(x,y,w,h=200,blanket=true){let s=R(x+20,y-h*.42,w-40,h*.3,'#8e98b2','rx="14"')+R(x+10,y-h*.14,w-20,h*.14,'#6d7690','rx="6"');
+  if(blanket) s+=P(`M${x+w*.14},${y-h*.44} C${x+w*.3},${y-h*.5} ${x+w*.7},${y-h*.5} ${x+w*.84},${y-h*.44} L${x+w*.86},${y-h*.1} C${x+w*.6},${y-h*.06} ${x+w*.4},${y-h*.06} ${x+w*.12},${y-h*.1}Z`,'url(#pWaffle)');
+  return s;}
+function sofa(x,y,w,h,bl){return sofaBack(x,y,w,h)+sofaFront(x,y,w,h,bl);}
+function clock(cx,cy,r,h,m,o={}){
+  const ha=((h%12)+m/60)*30*Math.PI/180, ma=m*6*Math.PI/180;
+  let s=C(cx,cy,r+5,INK)+C(cx,cy,r,'#fffdf5');
+  for(let i=0;i<12;i++){const a=i*30*Math.PI/180;s+=L(`M${cx+Math.sin(a)*r*.8},${cy-Math.cos(a)*r*.8} L${cx+Math.sin(a)*r*.92},${cy-Math.cos(a)*r*.92}`,INK,i%3?2:4);}
+  s+=L(`M${cx},${cy} L${cx+Math.sin(ha)*r*.5},${cy-Math.cos(ha)*r*.5}`,INK,r*.09)+L(`M${cx},${cy} L${cx+Math.sin(ma)*r*.78},${cy-Math.cos(ma)*r*.78}`,'#e0533d',r*.06)+C(cx,cy,r*.07,INK);
+  if(o.label) s+=T(cx,cy+r+r*.55,r*.5,o.label,o.labelColor||'#ffe48a');
+  return s;
+}
+function houses(x0,yG,n,hw,hh,o={}){
+  let s='';
+  for(let i=0;i<n;i++){
+    const x=x0+i*hw, top=yG-hh, lit=(o.lit||[]).includes(i), night=o.night;
+    s+=R(x,top,hw,hh,night?'url(#pBrickN)':'url(#pBrick)');
+    s+=P(`M${x-4},${top+2} L${x+hw/2},${top-hh*.5} L${x+hw+4},${top+2}Z`,night?'#2a2a3a':'#5a5a68');
+    s+=R(x+hw*.42,top-hh*.28,hw*.16,hh*.13,'#f4f1ea')+R(x+hw*.44,top-hh*.265,hw*.12,hh*.1,lit?'#ffd56b':(night?'#232857':'#a6cde0'));
+    const win=(wx,wy,ww,wh)=>R(wx-3,wy-3,ww+6,wh+6,'#f4f1ea')+R(wx,wy,ww,wh,lit?'#ffd56b':(night?'#232857':'#a6cde0'))+L(`M${wx+ww/2},${wy} V${wy+wh}`,'#f4f1ea',3);
+    s+=win(x+hw*.12,top+hh*.1,hw*.3,hh*.22)+win(x+hw*.58,top+hh*.1,hw*.3,hh*.22)+win(x+hw*.08,top+hh*.48,hw*.46,hh*.32);
+    s+=R(x+hw*.64,top+hh*.46,hw*.25,hh*.54,(o.doors||[])[i]||(night?'#28343a':'#3f5d55'))+C(x+hw*.85,top+hh*.74,Math.max(2,hw*.015),'#e8c76a');
+    s+=L(`M${x},${top} V${yG}`,'#7d4632',2);
+  }
+  return s;
+}
+function street(W,H,o={}){
+  const yG=H*(o.ground||.8);
+  let s=R(0,0,W,H,o.night?'url(#gNight)':'url(#gDay)');
+  if(o.night){s+=C(W*.88,H*.14,H*.07,'#fff5c8')+C(W*.88-H*.03,H*.13,H*.06,'#20265a');s+=stars(W,H*.45,24);}
+  else s+=C(W*.9,H*.13,H*.07,'#ffe27a','opacity=".9"');
+  s+=houses(o.x0??-10,yG,o.n||6,o.hw||(W+20)/(o.n||6),o.hh||H*.5,o);
+  s+=R(0,yG,W,H-yG,o.night?'#3c3b4c':'url(#pTiles)')+R(0,yG,W,5,o.night?'#2b2a38':'#a8a093');
+  return s;
+}
+function stars(W,H,n,seed=7){let s='';for(let i=0;i<n;i++){seed=(seed*9301+49297)%233280;const x=seed/233280*W;seed=(seed*9301+49297)%233280;const y=seed/233280*H;s+=C(x.toFixed(1),y.toFixed(1),(i%3)+1,'#fff','opacity=".85"');}return s;}
+function heart(x,y,s,c='#ff5d7a'){return G(x,y,s,P('M0,8 C-14,-4 -12,-16 0,-9 C12,-16 14,-4 0,8Z',c,`stroke="${INK}" stroke-width="1.6"`));}
+function zzz(x,y,s=1){return T(x,y,22*s,'Z','#cfe0ff')+T(x+18*s,y-20*s,30*s,'Z','#cfe0ff')+T(x+40*s,y-46*s,38*s,'Z','#cfe0ff');}
+function fence(x,y,w,h){return R(x,y,w,h,'url(#pPlank)')+R(x,y,w,6,'#9d8063');}
+function grass(x,y,w,h){return R(x,y,w,h,'url(#pGrass)');}
+function flower(x,y,c,s=1){return G(x,y,s,L('M0,0 V-40','#4f8f3a',3)+[0,72,144,216,288].map(a=>E(0,-50,6,10,c,`transform="rotate(${a} 0 -40)"`)).join('')+C(0,-40,5,'#ffd84d'));}
+function flowers(x,y,w,n=8){const cs=['#e8457a','#b48ae0','#ff8a5c','#f56fb0','#9f7ae0'];let s='';for(let i=0;i<n;i++)s+=flower(x+i*w/n+(i%2)*10,y+(i%3)*6,cs[i%cs.length],.9+(i%3)*.15);return s;}
+function garden(W,H,o={}){const fy=H*.18,gy=H*.6;return R(0,0,W,H,'url(#gDay)')+R(0,0,W*.18,gy,'#4f8a3c','rx="20"')+fence(W*.16,fy,W*.84,gy-fy)+grass(0,gy,W,H-gy)+(o.flowers===false?'':flowers(W*.55,gy+4,W*.45,7));}
+function butterfly(x,y,s=1){return G(x,y,s,E(-9,-6,10,8,'#ffb43b',`stroke="${INK}" stroke-width="1.5"`)+E(9,-6,10,8,'#ffb43b',`stroke="${INK}" stroke-width="1.5"`)+E(-7,6,7,6,'#ff8a3b')+E(7,6,7,6,'#ff8a3b')+L('M0,-10 V10',INK,3)+L('M0,-10 L-6,-20 M0,-10 L6,-20',INK,1.5));}
+function car(x,y,s=1,c='#d4503e'){return G(x,y,s,P('M-120,-20 C-120,-50 -100,-56 -70,-58 L-40,-92 C-30,-100 40,-100 54,-90 L86,-58 C110,-56 124,-46 124,-20 Z',c,`stroke="${INK}" stroke-width="3"`)+
+  P('M-34,-60 L-16,-86 H12 V-60Z','#bfe3f5')+P('M20,-60 V-86 H44 L66,-60Z','#bfe3f5')+C(-70,-18,22,INK)+C(-70,-18,10,'#bbb')+C(72,-18,22,INK)+C(72,-18,10,'#bbb')+R(110,-44,12,8,'#ffe48a'));}
+function suitcase(x,y,w,h,c){return R(x,y-h,w,h,c,`rx="10" stroke="${INK}" stroke-width="3"`)+L(`M${x+w*.3},${y-h} V${y-h-22} H${x+w*.7} V${y-h}`,INK,5)+L(`M${x+w*.33},${y-h+8} V${y-8} M${x+w*.66},${y-h+8} V${y-8}`,'rgba(0,0,0,.18)',5)+C(x+w*.2,y+4,6,INK)+C(x+w*.8,y+4,6,INK);}
+function rain(W,H,seed=3){let s='';for(let i=0;i<70;i++){seed=(seed*9301+49297)%233280;const x=seed/233280*W;seed=(seed*9301+49297)%233280;const y=seed/233280*H;s+=L(`M${x.toFixed(0)},${y.toFixed(0)} l-6,18`,'#dbe8f5',2,'opacity=".8"');}return s;}
+function cloud(x,y,s,c='#fff'){return G(x,y,s,C(-30,0,26,c)+C(0,-14,32,c)+C(32,0,24,c)+R(-56,0,112,24,c,'rx="12"'));}
+function speed(x,y,w,n=5){let s='';for(let i=0;i<n;i++)s+=L(`M${x},${y+i*16} h${-w+(i%2)*40}`,'#9aa',4,'opacity=".7"');return s;}
+function gloryLines(cx,cy,W,H,c='#fff3c4'){let s='';for(let i=0;i<24;i++){const a=i*15*Math.PI/180,b=(i*15+7)*Math.PI/180,r=Math.max(W,H);if(i%2)continue;s+=P(`M${cx},${cy} L${cx+Math.cos(a)*r},${cy+Math.sin(a)*r} L${cx+Math.cos(b)*r},${cy+Math.sin(b)*r}Z`,c);}return s;}
+function glassDoor(x,y,w,h,inner='',o={}){return R(x-10,y-10,w+20,h+10,'#6b6f78')+R(x,y,w,h,o.closed?'#e9e0cf':'url(#gWarm)')+inner+
+  (o.closed?P(`M${x},${y} h${w*.5} c-8,${h*.3} 8,${h*.7} 0,${h} h-${w*.5}Z M${x+w},${y} h-${w*.5} c8,${h*.3} -8,${h*.7} 0,${h} h${w*.5}Z`,'#d6c8b0'):'')+
+  L(`M${x+w*.15},${y+h*.1} l${w*.2},-${h*.08} M${x+w*.6},${y+h*.9} l${w*.25},-${h*.25}`,'#fff',6,'opacity=".45"')+L(`M${x+w/2},${y} V${y+h}`,'#6b6f78',8);}
+function basket(x,y,s=1){return G(x,y,s,E(0,-10,96,30,'#a87b4f',`stroke="${INK}" stroke-width="3"`)+E(0,-20,80,20,'#e9d7c0'));}
+function bed(x,y,w,h){return R(x-10,y-h-70,w*.45,90,'#c9cbd0','rx="12"')+R(x,y-h,w,h,'#f4ece4')+P(`M${x+w*.08},${y-h-10} L${x+w},${y-h-6} L${x+w},${y} L${x+w*.06},${y}Z`,'url(#pLeaves)')+
+  R(x+8,y-h-34,w*.3,40,'#f7f5f0','rx="14"');}
+function chair(x,y,s=1,o={}){return G(x,y,s,L('M0,-34 L-90,0 M0,-34 L90,0 M0,-34 L-44,8 M0,-34 L44,8',INK,9)+R(-7,-90,14,58,INK)+
+  R(-110,-340,220,220,'url(#pBoucle)','rx="34" stroke="#b9ad93" stroke-width="3"')+L('M0,-330 V-150 M-100,-240 H100','#bcae92',3)+
+  P('M-116,-344 C-60,-360 60,-360 116,-344 L120,-270 C80,-256 40,-280 0,-262 C-40,-280 -80,-256 -120,-270Z','url(#pTeal)')+
+  R(-124,-152,248,70,'url(#pBoucle)','rx="30" stroke="#b9ad93" stroke-width="3"')+(o.on||''));}
+function stool(x,y,s=1){return G(x,y,s,L('M-26,0 L-18,-60 M26,0 L18,-60',INK,6)+E(0,-62,34,10,'#c99a62',`stroke="${INK}" stroke-width="2"`));}
+function laptop(x,y,s=1){return G(x,y,s,P('M-36,0 L-30,-44 H30 L36,0Z','#c9ccd3',`stroke="${INK}" stroke-width="2.5"`)+C(0,-22,4,'#fff'));}
+function vacuum(x,y,s=1){return G(x,y,s,E(0,-40,46,40,'#e6463a',`stroke="${INK}" stroke-width="3"`)+C(-30,-4,12,INK)+C(30,-4,12,INK)+L('M30,-70 C90,-130 140,-60 160,-10',INK,9)+R(140,-14,60,14,'#555','rx="6"'));}
+function bulb(x,y,s=1){return G(x,y,s,gloryLines(0,0,120,120,'#ffe9a0')+C(0,0,22,'#ffe14d',`stroke="${INK}" stroke-width="3"`)+R(-10,20,20,14,'#aaa',`stroke="${INK}" stroke-width="2"`));}
+function hand(x,y,s=1,r=0){return G(x,y,s,P('M0,0 C30,-10 60,-6 90,-4 L90,30 C60,30 30,34 0,30Z',SKIN)+P('M0,4 C-14,-4 -30,4 -36,14 C-30,22 -16,26 0,24Z',SKIN)+L('M-30,10 Q-20,6 -8,8',INK,1.5,'opacity=".4"'),r);}
+function arrow(d,c='#e0533d',w=5){return L(d,c,w)+'';}
+function eggBowl(x,y,s=1){return G(x,y,s,E(0,-22,22,26,'#fbfbf6',`stroke="#ccc" stroke-width="2"`)+P('M-34,-30 H34 L30,0 H-30Z','#dfeef2',`stroke="#9bb" stroke-width="2" opacity=".75"`));}
+function cloudBubble(x,y,w,h,inner){return G(x,y,1,E(0,0,w/2,h/2,'#fff',`stroke="${INK}" stroke-width="4"`)+inner);}
+
+/* ================= the book ================= */
+const FW=800, HW=400;
+const full=(art,b=[],h=400)=>({span:2,w:FW,h,art,b});
+const half=(art,b=[],h=320)=>({span:1,w:HW,h,art,b});
+// bubble: [left%, top%, width%, text, kind, tail]
+const pages=[];
+const page=(panels,title)=>pages.push({panels,title});
+
+/* 1 — Meet Blacky */
+page([
+  full((W,H)=>room(W,H,'#f1e7d8',.8)+windowBox(570,56,160,170,{curtain:1})+plant(96,322,1.1)+G(330,372,1.45,cat('sit'))+
+      L('M560,312 Q470,338 384,262','#e0533d',5)+P('M384,262 l20,2 l-10,16Z','#e0533d'),
+    [[3,4,30,'Dit is <b>Blacky</b>.','c'],[47,9,20,'Hoi! Dat ben ik!','s','bl'],[62,64,35,'Zo zwart als een nacht zonder sterren... behalve één klein wit sterretje op zijn borst!','c']]),
+  half((W,H)=>R(0,0,W,H,'#dff0e2')+C(200,180,150,'#cfe8d4')+G(200,196,2.3,catHead({eyes:'wide'})),
+    [[3,3,52,'Zijn ogen zijn zo groen als kruisbessen.','c']]),
+  half((W,H)=>room(W,H,'#f6e9e0',.72)+G(200,292,1.25,cat('walk',{eyes:'happy'}))+heart(118,96,1.8)+heart(150,70,1.2),
+    [[3,3,56,'En als zijn staart hoog omhoog gaat, betekent dat: ik ben BLIJ!','c']]),
+],'Maak kennis met Blacky');
+
+/* 2 — Two houses */
+page([
+  full((W,H)=>street(W,H,{n:5,x0:20,hw:152,hh:190,ground:.82})+
+      [1,2,3].map(i=>C(20+i*152+76,358,17,'#ffe48a',`stroke="${INK}" stroke-width="3"`)+`<text x="${20+i*152+76}" y="366" font-size="22" text-anchor="middle" font-family="Bangers, Impact" fill="${INK}">${i}</text>`).join('')+
+      G(150,394,.42,cat('walk'),0,true),
+    [[1,3,22,'Het huis van Baardje en Knuffel: rustig en gezellig','c'],[58,3,24,'Hier woont Blacky’s eigen gezin','c'],[30,52,36,'Blacky woont drie huizen verderop.','s','bl']]),
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+windowBox(70,46,260,230,{})+R(70,46,260,230,'#f4dfc3','opacity=".85"')+G(200,262,.95,cat('sit',{eyes:'happy',blush:1}))+heart(96,90,1.6)+heart(312,110,1.3)+heart(290,70,1),
+    [[3,72,60,'Zijn gezin houdt heel, heel veel van hem.','c']]),
+  half((W,H)=>R(0,0,W,H,'#e6defa')+G(200,280,1.4,cat('loaf',{eyes:'closed'}))+zzz(270,90,1.2),
+    [[3,3,62,'Maar Blacky houdt ook nog van iets anders...','c'],[52,78,44,'DUTJES. Lange dutjes.','c']]),
+],'Twee huizen');
+
+/* 3 — Busy house */
+page([
+  full((W,H)=>room(W,H,'#f6dfc9',.78)+windowBox(600,50,140,140,{})+vacuum(120,380,1.3)+G(470,376,1.25,cat('sit',{eyes:'wide',ears:'flat',mouth:'frown'}))+
+      L('M380,150 l-20,-20 M560,150 l20,-20 M400,120 l-6,-26 M540,120 l6,-26','#e0533d',4),
+    [[2,5,14,'VROEMMM!','x'],[34,5,10,'BAM!','x'],[64,4,14,'DING-DONG!','x'],[66,60,13,'TRING TRING!','x'],[2,64,26,'Blacky’s eigen huis is fijn. Maar het is er DRUK.','c'],[38,62,22,'Zo... veel... lawaai!','s','tr']]),
+  half((W,H)=>R(0,0,W,H,'#ece4f6')+G(110,300,1.05,cat('sit',{eyes:'half',mouth:'flat'})),
+    [[38,5,58,'Waar vindt een kat een beetje rust?','t']]),
+  half((W,H)=>street(W,H,{n:3,hw:150,hh:170,ground:.86,x0:-60})+G(240,306,.95,cat('sit',{eyes:'wide'}))+bulb(320,70,.9),
+    [[3,3,58,'Toen kreeg Blacky een idee...','c']]),
+],'Rust en stilte');
+
+/* 4 — The discovery */
+page([
+  full((W,H)=>R(0,0,W,H,'url(#pBrick)')+R(0,370,W,30,'url(#pTiles)')+glassDoor(200,40,380,330,lamp(520,370,260)+sofa(240,370,240,170)+plant(286,370,.5))+G(690,392,1.05,cat('sit',{eyes:'wide',blush:1})),
+    [[2,4,22,'Op een ochtend, drie huizen verderop...','c'],[64,8,34,'Ooh! Zachte dekentjes... een rustige bank... en NIEMAND die stofzuigt!','s','br']]),
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+R(70,20,260,320,'url(#gWarm)')+G(200,360,.95,human('huggy',{face:'surprised',arms:'wave'}))+G(330,312,.6,cat('sit',{eyes:'open'})),
+    [[2,4,50,'Nou, hallo daar! Wie ben jij?','s','bl']]),
+  half((W,H)=>room(W,H,'#f3e6d6',.75)+G(200,294,1.15,cat('walk',{eyes:'happy'}),0,true),
+    [[3,4,60,'Ik ben Blacky. Ik kom alleen even een dutje doen.','s','bl'],[3,80,94,'Dat dutje was het begin van een prachtige vriendschap.','c']]),
+],'Een gezellige ontdekking');
+
+/* 5 — Morning */
+page([
+  half((W,H)=>room(W,H,'#f6dfc9',.72)+clock(300,92,52,7,25,{label:'7:25'})+basket(150,290,1)+G(150,282,.95,cat('loaf',{eyes:'half'})),
+    [[3,3,44,'Elke ochtend...','c'],[3,52,40,'Bijna tijd!','s','br']]),
+  half((W,H)=>room(W,H,'#f6dfc9',.8)+R(150,20,180,236,'#7a5c48',`stroke="${INK}" stroke-width="3"`)+R(196,182,88,74,'#5e4636',`stroke="${INK}" stroke-width="3"`)+G(250,300,.85,cat('walk',{eyes:'open'})),
+    [[6,8,24,'FLAP!','x'],[6,78,52,'Naar buiten door het kattenluikje!','c']]),
+  full((W,H)=>{const s=R(0,0,W,H,'url(#gDawn)')+fence(0,90,W,170)+grass(0,250,W,150)+
+      R(262,170,16,200,'url(#pPlank)')+R(522,170,16,200,'url(#pPlank)')+
+      L('M90,300 Q170,90 270,160 Q400,80 530,160 Q620,110 700,300','#1d1b22',4,'stroke-dasharray="4 12" opacity=".7"')+
+      T(130,370,48,'1')+T(400,370,48,'2')+T(650,370,48,'3');
+      return s+G(716,358,.85,cat('walk',{eyes:'happy'}));},
+    [[2,4,22,'Eén tuin...','c'],[36,4,22,'twee tuinen...','c'],[70,4,26,'drie tuinen!','c']]),
+],'Half acht');
+
+/* 6 — 7:30 at the door */
+page([
+  full((W,H)=>R(0,0,W,H,'url(#pBrick)')+R(0,372,W,28,'url(#pTiles)')+glassDoor(230,30,340,342,clock(400,120,50,7,30)+sofaBack(300,372,200,140))+G(650,392,1.15,cat('sit',{mouth:'open'})),
+    [[2,4,22,'Precies half acht.','c'],[74,6,22,'MIAUW!','s','bc'],[3,40,16,'TIK TIK','x']]),
+  full((W,H)=>R(0,0,W,H,'url(#pBrick)')+R(0,372,W,28,'url(#pTiles)')+R(230,30,340,342,'url(#gWarm)')+L('M230,30 V372 M570,30 V372','#6b6f78',10)+
+      G(360,412,1.12,human('beardy',{arms:'wave'}))+G(560,392,.95,cat('sit',{eyes:'happy',blush:1})),
+    [[2,6,30,'Goedemorgen, Blacky! Precies op tijd, zoals altijd!','s','br'],[68,72,30,'Elke dag weer. Je kunt je klok op hem gelijkzetten!','c']]),
+],'Klop klop');
+
+/* 7 — Inspection */
+page([
+  half((W,H)=>room(W,H,'#eef0e6',.78)+plant(300,252,1.4)+G(150,256,.95,cat('walk',{eyes:'open'})),
+    [[3,3,56,'Eerst: de ochtendinspectie.','c'],[3,46,34,'Plant: in orde!','s','br']]),
+  half((W,H)=>room(W,H,'#eef0e6',.82)+sofa(30,262,340,200,false)+L('M360,250 C390,240 396,200 380,180',F,12),
+    [[3,3,58,'Onder de bank: in orde!','s','none'],[64,52,32,'(zwiep)','c']]),
+  full((W,H)=>room(W,H,'#eef0e6',.74)+E(400,350,250,40,'#c9b6a0')+E(400,346,230,32,'#d9c7b2')+G(400,366,1.3,cat('sit',{eyes:'happy'}))+
+      T(250,140,44,'✓','#7cc34a')+T(560,120,44,'✓','#7cc34a')+T(620,220,36,'✓','#7cc34a'),
+    [[2,5,30,'Kleed: in orde. Raam: in orde. Alles is prima.','c'],[58,4,24,'Inspectie klaar!','s','bl']]),
+],'De ochtendinspectie');
+
+/* 8 — Kitchen */
+page([
+  full((W,H)=>{const base=R(0,0,W,H,'#ece6dc')+R(120,20,300,190,'#2b2b31',`stroke="#a5a7ad" stroke-width="8"`)+R(440,20,330,190,'#2b2b31',`stroke="#a5a7ad" stroke-width="8"`)+R(470,70,270,110,'url(#gOven)')+
+      L('M470,58 H740','#c5c7cc',8)+C(240,40,5,'#4aa8ff')+C(600,40,5,'#4aa8ff')+R(210,80,60,70,'#bfc1c6')+R(120,220,650,40,'#d8d3ca');
+    return base+G(110,430,1.1,human('huggy',{arms:'point',face:'surprised'}))+R(0,262,W,16,'#fbfbf8')+R(0,278,W,122,'#c9c6bf')+eggBowl(400,264,1.1)+G(540,268,1.15,cat('loaf',{eyes:'half'}));},
+    [[18,4,30,'Blacky! Katten horen niet op het aanrecht!','s','bl'],[66,4,32,'Ik zit niet OP het aanrecht. Ik bewaak dit ei.','s','bl']]),
+  half((W,H)=>R(0,0,W,H,'#2b2b31')+R(30,30,340,190,'url(#gOven)')+L('M30,20 H370','#c5c7cc',10)+G(200,330,1.7,catHead({eyes:'closed',mouth:'smile'})),
+    [[4,4,40,'snuf snuf','x small'],[48,52,48,'Mmm... er ruikt iets lekker!','s','bl']]),
+  half((W,H)=>room(W,H,'#ece6dc',.72)+G(200,294,1.2,cat('sit',{eyes:'half',mouth:'flat'})),
+    [[3,3,40,'Hmpf.','s','br'],[54,80,42,'Blacky is het er niet mee eens.','c']]),
+],'Het ei bewaken');
+
+/* 9 — Nap time */
+page([
+  full((W,H)=>room(W,H,'#eae2d4',.84)+windowBox(110,30,580,150,{curtain:1})+sofa(60,392,680,270)+G(420,300,1.55,cat('curl',{toy:1})),
+    [[2,4,30,'Dan komt het allerbelangrijkste werkje van de dag...','c'],[64,20,30,'DUTJESTIJD!','x big']]),
+  half((W,H)=>R(0,0,W,H,'url(#pWaffle)')+G(210,230,2.2,muis()),
+    [[3,3,62,'Dit is Meneer Muis: Blacky’s beste vriend in dit huis.','c']]),
+  half((W,H)=>R(0,0,W,H,'url(#pWaffle)')+G(130,230,1.6,catHead({eyes:'closed'}))+zzz(210,120,.8),
+    [[44,4,52,'...visjes... dekentjes... nog meer visjes...','t']]),
+],'Dutjestijd');
+
+/* 10 — The chair */
+page([
+  half((W,H)=>room(W,H,'#efe7da',.8)+cabinet(0,256,400,140)+G(200,380,.98,human('beardy',{arms:'hold',front:laptop(0,-140,1)})),
+    [[3,3,50,'Zo. Tijd om te werken!','s','br']]),
+  half((W,H)=>room(W,H,'#efe7da',.86)+chair(200,312,.82,{on:G(-6,-150,1.3,cat('loaf',{eyes:'wide'}))+G(70,-158,.75,muis())}),
+    [[2,3,48,'Deze stoel? Sorry. <b>BEZET.</b>','s','br']]),
+  full((W,H)=>room(W,H,'#efe7da',.82)+cabinet(500,330,300,150)+chair(560,392,.95,{on:G(0,-150,1.3,cat('curl',{toy:1}))})+stool(220,392,1.3)+
+      G(220,392-80,1,human('beardy',{sit:1,arms:'hold',face:'sad',front:laptop(0,-126,1)})),
+    [[2,4,22,'Raad eens wie er won?','c'],[30,4,30,'Dit krukje zit... heel lekker. Echt waar.','s','bl']]),
+],'De stoel is bezet');
+
+/* 11 — Garden */
+page([
+  full((W,H)=>garden(W,H)+G(690,430,1.05,human('huggy',{arms:'pointL'}))+G(570,214,.7,P('M-30,0 H30 L24,40 H-24Z','#7fb3c8')+L('M30,8 L70,-10','#7fb3c8',8),0,true)+
+      L('M530,236 l-10,30 M516,240 l-16,26 M544,244 l-4,30','#7cc4f2',3)+G(330,330,1.0,cat('loaf',{eyes:'half'}))+butterfly(470,150,1.2),
+    [[2,4,28,'Op zonnige dagen helpt Blacky in de tuin.','c'],[2,48,28,'Ik help! Ik bewaak het gras.','s','br']]),
+  half((W,H)=>R(0,0,W,H,'url(#pGrass)')+G(200,196,2.4,catHead({eyes:'wide'}))+butterfly(200,212,1.6),
+    [[3,3,36,'Eh... hallo?','s','bl']]),
+  half((W,H)=>R(0,0,W,H,'url(#pGrass)')+G(170,196,2.2,catHead({eyes:'closed',mouth:'open'}),-10)+butterfly(330,70,1.4)+L('M290,120 l-30,20 M300,140 l-34,10','#fff',4),
+    [[44,58,52,'HATSJOE!','x big']]),
+],'In de tuin');
+
+/* 12 — Yoga */
+page([
+  full((W,H)=>R(0,0,W,H,'#f5f3ef')+R(0,280,W,12,'#fff')+R(0,292,W,108,'url(#pFloor)')+G(420,350,1.6,cat('belly',{eyes:'wide'})),
+    [[2,4,38,'Blacky doet ook aan yoga. Deze houding heet...','c'],[44,20,54,'DE OMGEKEERDE WORST!','x']]),
+  half((W,H)=>room(W,H,'#f5f3ef',.86)+G(200,420,1.15,human('huggy',{face:'laugh',arms:'cheer'})),
+    [[3,3,52,'Ha ha ha! Gekke kat!','s','br']]),
+  half((W,H)=>R(0,0,W,H,'url(#pFloor)')+G(200,170,2.2,catHead({eyes:'wide',mouth:'smile'}),180),
+    [[3,72,60,'Wat? Het is heel ontspannend.','s','tr']]),
+],'Kattenyoga');
+
+/* 13 — Football */
+page([
+  full((W,H)=>room(W,H,'#efe9df',.8)+lamp(350,320,280)+cabinet(30,320,300,80)+tv(50,110,260,150)+
+      sofaBack(420,400,360,240)+G(600,440,.98,human('beardy',{arms:'pet',holding:G(-4,-104,.85,cat('loaf',{eyes:'closed'}))}))+sofaFront(420,400,360,240,false),
+    [[2,4,32,'’s Avonds kijkt Baardje voetbal...','c'],[44,4,30,'...en krijgt Blacky kriebeltjes onder zijn kin.','c']]),
+  half((W,H)=>R(0,0,W,H,'#ffefb0')+gloryLines(200,160,W,H,'#ffe07a')+G(200,440,1.05,human('beardy',{arms:'cheer',face:'open',holding:G(0,-104,.85,cat('loaf',{eyes:'wide',ears:'flat'}))})),
+    [[2,4,40,'GOOOAL!','x'],[62,62,36,'Ssst!','s','bl']]),
+  half((W,H)=>R(0,0,W,H,'#3b3a4f')+G(170,200,2.2,catHead({eyes:'closed',mouth:'smile',blush:1}),-12)+hand(240,226,1.1,-20),
+    [[48,6,50,'PRRRRR','x'],[3,80,62,'Minder juichen. Meer kriebelen.','s','tr']]),
+],'Voetbalavond');
+
+/* 14 — Hugs */
+page([
+  full((W,H)=>R(0,0,W,H,'#fde6ec')+windowBox(40,30,200,260,{curtain:1})+G(420,620,1.4,human('huggy',{face:'closed',arms:'hug',holding:G(34,-150,.8,cat('loaf',{eyes:'closed',blush:1}))}))+
+      heart(640,90,2.2)+heart(700,170,1.4)+heart(250,80,1.6)+heart(600,240,1.2),
+    [[2,4,26,'Knuffel geeft de beste knuffels van de hele wereld.','c'],[64,5,32,'Wie is de liefste kat van de hele straat?','s','bl'],[66,64,24,'Ik. Natuurlijk.','s','tl']],460),
+  half((W,H)=>R(0,0,W,H,'#fde6ec')+G(200,200,2.2,catHead({eyes:'happy',blush:1}))+heart(70,80,1.8)+heart(330,80,1.8)+heart(330,250,1.2),
+    [[3,82,94,'Knuffelniveau: MAXIMAAL.','c']]),
+  half((W,H)=>room(W,H,'#e8f0ec',.84)+G(200,400,1.05,human('beardy',{arms:'open'})),
+    [[3,3,40,'Mijn beurt?','s','br'],[56,40,40,'Straks misschien.','s','none']]),
+],'Knuffeltijd');
+
+/* 15 — The very long cat */
+page([
+  full((W,H)=>R(0,0,W,H,'#efebe5')+windowBox(470,26,280,130,{blinds:1})+plant(400,200,.7)+bed(0,400,W,180)+G(400,330,1.75,cat('stretch',{eyes:'closed'}))+
+      [0,1,2,3,4].map(i=>G(180+i*108,160,.8,muis())+T(150+i*108,104,26,String(i+1),'#ffe48a')).join(''),
+    [[2,4,30,'Hoe lang is Blacky? We meten het in Meneer Muizen!','c'],[56,74,42,'Blacky is VIJF Meneer Muizen lang!','c']]),
+  half((W,H)=>R(0,0,W,H,'#efebe5')+tv(250,30,170,110,'cartoon')+R(0,190,W,130,'url(#pLeaves)')+G(150,300,1.2,cat('loaf',{eyes:'half'})),
+    [[3,3,50,'Tv kijken in bed? Ja, graag.','s','br']]),
+  half((W,H)=>R(0,0,W,H,'#e9e3f4')+G(200,210,2.3,catHead({eyes:'closed',mouth:'yawn'})),
+    [[3,3,50,'GAAAAP','x'],[3,82,94,'Al dat dutten is hard werken.','c']]),
+],'De hele lange kat');
+
+/* 16 — 22:30 */
+page([
+  half((W,H)=>R(0,0,W,H,'#3b3a55')+windowBox(30,40,160,180,{night:1})+clock(296,110,62,10,30,{label:'22:30'})+G(130,316,.9,cat('sit',{eyes:'half',mouth:'yawn'})),
+    [[50,82,46,'Maar om half elf...','c']]),
+  half((W,H)=>R(0,0,W,H,'url(#pBrickN)')+R(40,20,200,300,'url(#gWarm)')+G(140,400,.95,human('beardy',{arms:'pointL'}))+G(320,312,.75,cat('sit',{eyes:'open'})),
+    [[38,4,58,'Tijd om naar huis te gaan, Blacky. Je gezin wacht op je!','s','bl']]),
+  full((W,H)=>street(W,H,{night:1,n:6,lit:[0,3],ground:.84})+G(520,384,.6,cat('walk',{eyes:'happy'})),
+    [[2,4,26,'Eén, twee, drie huizen. Weer thuis.','c'],[50,46,30,'Welterusten! Tot morgen om half acht!','s','br']]),
+],'Half elf');
+
+/* 17 — Two homes */
+page([
+  full((W,H)=>R(0,0,W,H,'url(#gNight)')+stars(W,H*.5,30)+C(110,80,38,'#fff5c8')+R(160,60,480,340,'url(#pBrickN)')+windowBox(240,120,320,220,{})+
+      R(240,120,320,220,'#ffe7a8')+lamp(300,340,200)+basket(420,330,1.1)+G(420,322,1.2,cat('curl',{})),
+    [[2,64,28,'Blacky heeft TWEE thuizen...','c'],[70,64,28,'...en TWEE gezinnen die van hem houden.','c']]),
+  half((W,H)=>R(0,0,W,H,'url(#gNight)')+stars(W,H*.6,16,11)+houses(40,320,2,160,190,{night:1}),
+    [[3,3,62,'En verderop gaan Baardje en Knuffel slapen...','c']]),
+  half((W,H)=>R(0,0,W,H,'#20265a')+cloud(200,180,2.8)+clock(200,170,62,7,30,{label:'7:30',labelColor:'#ff8a5c'}),
+    [[3,3,60,'...en ze verheugen zich nu al op half acht.','c']]),
+],'Twee thuizen');
+
+/* 18 — Suitcases */
+page([
+  full((W,H)=>room(W,H,'#e9eef2',.78)+suitcase(380,320,140,190,'#3d8fd1')+suitcase(540,320,110,150,'#e85a4f')+R(560,160,70,10,INK,'rx="5"')+G(200,350,1.2,cat('sit',{eyes:'wide',mouth:'frown'}))+T(286,120,90,'?','#ffe48a'),
+    [[2,4,38,'Op een dag stond er iets vreemds in de gang.','c'],[56,6,38,'Wat zijn DAT? Dozen... met WIELTJES?','s','bl']]),
+  half((W,H)=>room(W,H,'#e9eef2',.82)+G(220,420,1.05,human('beardy',{arms:'down',face:'sad'})),
+    [[3,3,62,'We gaan op vakantie, Blacky. Maar heel even, hoor.','s','br']]),
+  half((W,H)=>R(0,0,W,H,'#d8dfe8')+G(200,210,2.2,catHead({eyes:'sad',ears:'flat',mouth:'frown'})),
+    [[3,74,60,'Vaka... wat? Dat klinkt niet goed.','s','tr']]),
+],'Dozen met wieltjes');
+
+/* 19 — Leaving */
+page([
+  full((W,H)=>street(W,H,{n:6,ground:.78})+car(260,330,1.2,'#d4503e')+speed(470,250,120,5)+R(560,290,240,24,'#a29a8c')+G(680,290,.85,cat('sit',{eyes:'sad',ears:'flat',tailDown:1})),
+    [[4,4,16,'VROEM','x'],[58,4,40,'Daaag...','s','br']]),
+  full((W,H)=>street(W,H,{n:6,ground:.78})+R(560,290,240,24,'#a29a8c')+G(680,290,.6,cat('sit',{eyes:'sad',tailDown:1})),
+    [[2,6,40,'En zomaar... waren ze weg.','c']],260),
+],'Daaag');
+
+/* 20 — Closed door */
+page([
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+glassDoor(40,20,220,280,'',{closed:1})+G(320,312,.8,cat('sit',{eyes:'open',mouth:'open'})),
+    [[3,3,50,'De volgende ochtend, half acht...','c'],[64,26,32,'Miauw?','s','bc']]),
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+glassDoor(40,20,220,280,'',{closed:1})+G(320,312,.8,cat('sit',{eyes:'wide',mouth:'open'})),
+    [[60,20,36,'MIAUW?!','s','bc loud'],[3,74,40,'TIK TIK TIK','x small']]),
+  full((W,H)=>R(0,0,W,H,'url(#gRain)')+R(0,0,W,H,'url(#pBrick)','opacity=".55"')+glassDoor(120,30,300,330,'',{closed:1})+R(0,360,W,40,'#8f8a84')+
+      G(600,370,1.2,cat('sit',{eyes:'sad',ears:'flat',mouth:'frown',tear:1,tailDown:1}))+cloud(610,40,1.2,'#7d8796')+rain(W,H),
+    [[2,4,36,'De deur bleef dicht. Het huis was stil. Veel te stil.','c']]),
+],'Niemand thuis');
+
+/* 21 — Waiting days */
+page([
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+glassDoor(30,20,180,280,'',{closed:1})+G(300,312,.8,cat('sit',{eyes:'sad',tailDown:1})),
+    [[3,3,52,'<b>Maandag:</b> niemand thuis.','c']]),
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+windowBox(60,60,280,200,{})+R(60,60,280,200,'#e9e0cf')+R(40,268,320,16,'#ddd')+G(200,268,.8,cat('loaf',{eyes:'sad'})),
+    [[3,3,52,'<b>Dinsdag:</b> nog steeds niemand.','c']]),
+  half((W,H)=>R(0,0,W,H,'url(#pBrick)')+R(0,280,W,40,'url(#pTiles)')+R(70,262,260,30,'#a87f55','rx="4"')+G(200,286,.95,cat('loaf',{eyes:'closed',mouth:'frown'})),
+    [[3,3,62,'<b>Woensdag:</b> Blacky wachtte op de deurmat. De hele dag.','c']]),
+  half((W,H)=>street(W,H,{n:3,hw:150,hh:150,ground:.82,x0:-30})+R(0,232,W,24,'#a29a8c')+G(250,232,.75,cat('sit',{eyes:'open'}))+L('M300,120 l40,-10','#fff',0),
+    [[3,3,60,'<b>Donderdag:</b> misschien vandaag?','c'],[48,30,48,'Komen ze eraan?','t tr2']]),
+],'Wachten');
+
+/* 22 — Dreams */
+page([
+  full((W,H)=>R(0,0,W,H,'#2e2c48')+windowBox(40,30,150,170,{night:1})+basket(220,370,1.1)+G(220,362,1.15,cat('loaf',{eyes:'sad'}))+
+      cloudBubble(560,160,420,250,sofa(-150,80,300,170)+G(-10,40,.9,cat('curl',{}))+G(110,-50,.7,muis())+hand(-130,-80,.8))+C(380,290,14,'#fff',`stroke="${INK}" stroke-width="4"`)+C(340,320,8,'#fff',`stroke="${INK}" stroke-width="3"`),
+    [[26,3,22,'’s Nachts droomde Blacky van zijn roze dekentje, Meneer Muis... en kriebeltjes onder zijn kin.','c']]),
+  half((W,H)=>R(0,0,W,H,'url(#gNight)')+stars(W,H,22,5)+C(300,90,40,'#fff5c8')+R(0,250,W,70,'#3d3554')+G(140,256,.9,cat('sit',{eyes:'sad',tailDown:1})),
+    [[3,3,50,'Komen ze ooit nog terug?','t tr2']]),
+  half((W,H)=>R(0,0,W,H,'url(#gNight)')+stars(W,H,22,9)+L('M330,40 L120,170','#fff9d6',5)+C(120,170,10,'#fff9d6')+R(0,250,W,70,'#3d3554')+G(280,256,.9,cat('sit',{eyes:'wide'})),
+    [[3,72,60,'Blacky deed een wens.','c'],[60,4,36,'Een vallende ster!','s','bc']]),
+],'Een wens');
+
+/* 23 — They're back */
+page([
+  full((W,H)=>street(W,H,{n:6,ground:.78})+car(220,330,1.2,'#d4503e')+R(560,290,240,24,'#a29a8c')+G(680,290,.85,cat('sit',{eyes:'wide'}))+T(744,120,110,'!','#ffe48a'),
+    [[2,4,22,'Toen, op een zonnige ochtend...','c'],[34,4,26,'VROEM VROEM','x'],[50,46,26,'Die auto... die auto KEN ik!','s','br']]),
+  full((W,H)=>R(0,0,W,H,'#fff3c4')+speed(360,170,320,6)+G(520,320,1.5,cat('walk',{run:1,eyes:'happy'})),
+    [[2,6,40,'ZE ZIJN TERUG!!!','x big'],[62,74,36,'Eén-twee-drie huizen in één tel!','c']],360),
+],'Ze zijn terug!');
+
+/* 24 — Reunion */
+page([
+  full((W,H)=>R(0,0,W,H,'#fde6ec')+gloryLines(400,240,W,H,'#ffd3dd')+suitcase(80,400,110,140,'#3d8fd1')+
+      G(360,600,1.3,human('huggy',{face:'closed',arms:'hug',holding:G(34,-150,.8,cat('loaf',{eyes:'happy',blush:1}))}))+G(640,500,1.05,human('beardy',{arms:'cheer',face:'open'}))+
+      heart(200,80,2)+heart(560,60,1.6)+heart(740,150,1.4)+heart(240,200,1.2),
+    [[2,4,28,'Blacky! We hebben je ZO gemist!','s','br'],[22,30,18,'Prrrrrr!','s','br']],440),
+  half((W,H)=>R(0,0,W,H,'#e8f0ec')+G(200,430,1.25,human('beardy',{arms:'down',face:'smile'})),
+    [[3,3,52,'Heb jij ons ook gemist?','s','br']]),
+  half((W,H)=>R(0,0,W,H,'#fde6ec')+G(200,200,2.2,catHead({eyes:'happy',blush:1}))+heart(330,70,1.6),
+    [[5,72,88,'Ik? Jullie missen? ...Ja. Heel, heel erg.','s','tl']]),
+],'Welkom thuis');
+
+/* 25 — The end */
+page([
+  full((W,H)=>room(W,H,'#eae2d4',.86)+lamp(90,380,300)+sofa(150,392,560,250)+G(380,312,1.3,cat('curl',{toy:1}))+G(560,300,.9,fishToy())+G(740,470,.9,human('beardy',{arms:'pointL'})),
+    [[2,4,32,'We hebben een cadeautje voor je meegenomen van vakantie!','s','none'],[54,10,30,'Een vis! Meneer Muis, dit is Meneer Vis.','s','bl']]),
+  full((W,H)=>R(0,0,W,H,'url(#gNight)')+stars(W,H*.55,34,21)+C(700,70,40,'#fff5c8')+houses(280,360,3,160,170,{night:1,lit:[0,2]})+
+      L('M360,170 Q520,40 680,170','#ff8fab',4,'stroke-dasharray="2 14"')+heart(360,170,1.4)+heart(680,170,1.4)+G(520,388,.45,cat('walk',{eyes:'happy'})),
+    [[2,6,40,'Twee thuizen. Twee gezinnen. Eén heel blije kat.','c'],[3,48,30,'EINDE','x big']],400),
+],'Oost, west, thuis best');
+
+/* ================= render ================= */
+const book=document.getElementById('book');
+function panelHTML(p){
+  const bub=p.b.map(([x,y,w,t,k='c',tail='none'])=>{
+    const cls=k.split(' ').concat(k.startsWith('x')?[]:tail.split(' '));
+    return `<div class="b ${cls.join(' ')}" style="left:${x}%;top:${y}%;width:${w}%">${t}</div>`;}).join('');
+  return `<figure class="panel${p.span===2?' span2':''}" style="aspect-ratio:${p.w}/${p.h}"><svg viewBox="0 0 ${p.w} ${p.h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${p.art(p.w,p.h)}</svg>${bub}</figure>`;
+}
+let html=`<article class="page cover" id="p0" aria-label="Omslag"><figure class="panel" style="aspect-ratio:800/1040"><svg viewBox="0 0 800 1040" aria-hidden="true">
+  ${R(0,0,800,1040,'url(#gDawn)')}${C(650,420,80,'#ffe7a0','opacity=".9"')}${houses(-20,780,4,210,260,{})}${R(0,780,800,260,'url(#pTiles)')}${R(0,780,800,6,'#a8a093')}
+  ${R(230,895,340,62,'#a87f55','rx="8"')}<text x="400" y="938" font-size="38" text-anchor="middle" fill="#7a5638" font-family="Bangers, Impact" letter-spacing="6">WELKOM</text>
+  ${clock(120,640,62,7,30,{label:'7:30'})}${G(420,925,2.05,cat('sit',{eyes:'open',blush:1}))}${heart(600,610,2.4)}${G(610,980,.8,muis())}
+  </svg><div class="cover-title"><h1>Blacky’s <span>Geheime</span> Tweede Thuis</h1><p>Elke ochtend om half acht klopt er een klein zwart katje bij ons aan.</p></div>
+  <div class="cover-foot">Een stripboek naar een waargebeurd verhaal</div></figure></article>`;
+pages.forEach((pg,i)=>{
+  html+=`<article class="page" id="p${i+1}" aria-label="Pagina ${i+1}"><h3 class="ptitle">${pg.title}</h3><div class="grid">${pg.panels.map(panelHTML).join('')}</div><div class="folio"><span>Blacky’s Geheime Tweede Thuis</span><span>${i+1}</span></div></article>`;
+});
+const photos=[['statue','De echte Blacky, stil als een standbeeld'],['nap','Dutjestijd met zijn knuffel'],['football','Voetbalavond met kinkriebels'],
+  ['chair','Sorry, deze stoel is bezet'],['sofa-evening','Luie avond op de bank'],['blankets','Lekker in de dekentjes'],
+  ['long-cat','De hele lange kat'],['counter','Het ei bewaken'],['bed-tv','Tv-tijd in bed'],
+  ['sausage','De omgekeerde worst'],['garden','Helpen in de tuin'],['inspection','Inspectierondje']];
+const np=pages.length+1;
+html+=`<article class="page" id="p${np}" aria-label="Pagina ${np}"><h3 class="ptitle">Maak kennis met de echte Blacky</h3><p class="intro">Alles in dit boek gebeurt echt. Hier zie je de echte Blacky, die precies doet wat je net hebt gelezen.</p>
+  <div class="photos">${photos.map(([f,c])=>`<figure><img src="../photos/${f}.jpg" alt="${c}" loading="lazy"><figcaption>${c}</figcaption></figure>`).join('')}</div>
+  <div class="folio"><span>Blacky’s Geheime Tweede Thuis</span><span>${np}</span></div></article>`;
+book.innerHTML=html;
+
+/* ================= reading modes ================= */
+const all=[...book.querySelectorAll('.page')], pos=document.getElementById('pos'), prev=document.getElementById('prev'), next=document.getElementById('next');
+const bBook=document.getElementById('modeBook'), bAll=document.getElementById('modeAll');
+let cur=0, mode='book';
+function show(i,anim=true){
+  cur=Math.max(0,Math.min(all.length-1,i));
+  all.forEach((p,k)=>{p.hidden=mode==='book'&&k!==cur;});
+  if(anim&&mode==='book'){all[cur].classList.remove('turn');void all[cur].offsetWidth;all[cur].classList.add('turn');}
+  pos.textContent=cur===0?'Omslag':`Pagina ${cur} van ${all.length-1}`;
+  prev.disabled=cur===0; next.disabled=cur===all.length-1;
+}
+function setMode(m){
+  mode=m; document.body.classList.toggle('all',m==='all');
+  bBook.setAttribute('aria-pressed',m==='book'); bAll.setAttribute('aria-pressed',m==='all');
+  try{localStorage.setItem('blacky-mode-nl',m);}catch(e){}
+  show(cur,false);
+}
+prev.onclick=()=>{show(cur-1);window.scrollTo({top:0});};
+next.onclick=()=>{show(cur+1);window.scrollTo({top:0});};
+bBook.onclick=()=>setMode('book'); bAll.onclick=()=>setMode('all');
+document.addEventListener('keydown',e=>{if(mode!=='book')return;if(e.key==='ArrowRight'){next.click();}if(e.key==='ArrowLeft'){prev.click();}});
+let tx=null;
+book.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+book.addEventListener('touchend',e=>{if(tx===null||mode!=='book')return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>60)(dx<0?next:prev).click();tx=null;});
+const hm=/^#p(\d+)$/.exec(location.hash||''); if(hm) cur=+hm[1];
+let saved='book'; try{saved=localStorage.getItem('blacky-mode-nl')||'book';}catch(e){}
+setMode(saved==='all'?'all':'book');
+</script>
