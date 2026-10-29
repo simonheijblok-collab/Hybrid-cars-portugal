@@ -1,4 +1,4 @@
-<title>Blacky’s Geheime Tweede Thuis</title>
+<title>Blacky’s geheime tweede thuis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Fredoka:wght@500;700&display=swap">
@@ -108,7 +108,7 @@ body.all .nav{display:none}
 </svg>
 
 <header class="top">
-  <h2>Blacky’s Geheime Tweede Thuis</h2>
+  <h2>Blacky’s geheime tweede thuis</h2>
   <div class="seg" role="group" aria-label="Leesweergave">
     <button type="button" id="modeBook" aria-pressed="true">Eén pagina</button>
     <button type="button" id="modeAll" aria-pressed="false">Alle pagina’s</button>
@@ -635,10 +635,10 @@ let html=`<article class="page cover" id="p0" aria-label="Omslag"><figure class=
   ${R(0,0,800,1040,'url(#gDawn)')}${C(650,420,80,'#ffe7a0','opacity=".9"')}${houses(-20,780,4,210,260,{})}${R(0,780,800,260,'url(#pTiles)')}${R(0,780,800,6,'#a8a093')}
   ${R(230,895,340,62,'#a87f55','rx="8"')}<text x="400" y="938" font-size="38" text-anchor="middle" fill="#7a5638" font-family="Bangers, Impact" letter-spacing="6">WELKOM</text>
   ${clock(120,640,62,7,30,{label:'7:30'})}${G(420,925,2.05,cat('sit',{eyes:'open',blush:1}))}${heart(600,610,2.4)}${G(610,980,.8,muis())}
-  </svg><div class="cover-title"><h1>Blacky’s <span>Geheime</span> Tweede Thuis</h1><p>Elke ochtend om half acht klopt er een klein zwart katje bij ons aan.</p></div>
+  </svg><div class="cover-title"><h1>Blacky’s <span>geheime</span> tweede thuis</h1><p>Elke ochtend om half acht klopt er een klein zwart katje bij ons aan.</p></div>
   <div class="cover-foot">Een stripboek naar een waargebeurd verhaal</div></figure></article>`;
 pages.forEach((pg,i)=>{
-  html+=`<article class="page" id="p${i+1}" aria-label="Pagina ${i+1}"><h3 class="ptitle">${pg.title}</h3><div class="grid">${pg.panels.map(panelHTML).join('')}</div><div class="folio"><span>Blacky’s Geheime Tweede Thuis</span><span>${i+1}</span></div></article>`;
+  html+=`<article class="page" id="p${i+1}" aria-label="Pagina ${i+1}"><h3 class="ptitle">${pg.title}</h3><div class="grid">${pg.panels.map(panelHTML).join('')}</div><div class="folio"><span>Blacky’s geheime tweede thuis</span><span>${i+1}</span></div></article>`;
 });
 const photos=[['statue','De echte Blacky, stil als een standbeeld'],['nap','Dutjestijd met zijn knuffel'],['football','Voetbalavond met kinkriebels'],
   ['chair','Sorry, deze stoel is bezet'],['sofa-evening','Luie avond op de bank'],['blankets','Lekker in de dekentjes'],
@@ -647,7 +647,7 @@ const photos=[['statue','De echte Blacky, stil als een standbeeld'],['nap','Dutj
 const np=pages.length+1;
 html+=`<article class="page" id="p${np}" aria-label="Pagina ${np}"><h3 class="ptitle">Maak kennis met de echte Blacky</h3><p class="intro">Alles in dit boek gebeurt echt. Hier zie je de echte Blacky, die precies doet wat je net hebt gelezen.</p>
   <div class="photos">${photos.map(([f,c])=>`<figure><img src="../photos/${f}.jpg" alt="${c}" loading="lazy"><figcaption>${c}</figcaption></figure>`).join('')}</div>
-  <div class="folio"><span>Blacky’s Geheime Tweede Thuis</span><span>${np}</span></div></article>`;
+  <div class="folio"><span>Blacky’s geheime tweede thuis</span><span>${np}</span></div></article>`;
 book.innerHTML=html;
 
 /* ================= reading modes ================= */
